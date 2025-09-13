@@ -136,27 +136,48 @@ export default function Globe({
         );
       }
 
-      // at very high zoom, render small circles on top so hotspots have points
-      if (!map.getLayer("events-points")) {
-        map.addLayer({
-          id: "events-points",
-          type: "circle",
-          source: "events",
-          minzoom: 14,
-          paint: {
-            "circle-radius": [
-              "interpolate",
-              ["linear"],
-              ["zoom"],
-              14, 1.2,
-              18, 3.5
-            ],
-            "circle-color": "rgba(255, 255, 255, 0.85)",
-            "circle-stroke-color": "rgba(0,0,0,0.5)",
-            "circle-stroke-width": 0.5,
-            "circle-opacity": 0.8
+
+      // add a pin emoji symbol when zoomed in closely
+      try {
+        if (!(map as any).hasImage || !(map as any).hasImage("pin-emoji")) {
+          const size = 100;
+          const canvas = document.createElement("canvas");
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.clearRect(0, 0, size, size);
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.font = `${Math.floor(size * 0.9)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
+            ctx.fillText("📍", size / 2, size / 2);
+            const imgData = ctx.getImageData(0, 0, size, size);
+            (map as any).addImage("pin-emoji", imgData, { pixelRatio: 2 });
           }
-        });
+        }
+
+        if (!map.getLayer("events-pins")) {
+          (map as any).addLayer({
+            id: "events-pins",
+            type: "symbol",
+            source: "events",
+            minzoom: 11, // TODO maybe make this smaller (would show closer)
+            layout: {
+              "icon-image": "pin-emoji",
+              "icon-size": [
+                "interpolate",
+                ["linear"],
+                ["zoom"],
+                11, 0.45,
+                20, 0.8
+              ],
+              "icon-allow-overlap": true,
+              "icon-anchor": "bottom"
+            }
+          });
+        }
+      } catch (e) {
+        // no-op if emoji image can't be created in this environment
       }
 
       setPointCount((initialData.features ?? []).length);
