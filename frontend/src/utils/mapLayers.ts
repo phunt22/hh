@@ -1,5 +1,6 @@
 import type { Map as MLMap } from "maplibre-gl";
 import { findFirstSymbolLayerId } from './mapUtils';
+import { ensureCategoryPins } from '../components/Pin';
 
 export function setupMapLayers(map: MLMap) {
 	setupHeatmapLayer(map);
@@ -75,25 +76,8 @@ function setupHeatmapLayer(map: MLMap) {
 }
 
 function setupPinLayer(map: MLMap) {
-	// Create pin emoji image
+	// Use colored SVG pins per category
 	try {
-		if (!(map as any).hasImage || !(map as any).hasImage("pin-emoji")) {
-			const size = 90;
-			const canvas = document.createElement("canvas");
-			canvas.width = size;
-			canvas.height = size;
-			const ctx = canvas.getContext("2d");
-			if (ctx) {
-				ctx.clearRect(0, 0, size, size);
-				ctx.textAlign = "center";
-				ctx.textBaseline = "middle";
-				ctx.font = `${Math.floor(size * 0.9)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;
-				ctx.fillText("📍", size / 2, size / 2);
-				const imgData = ctx.getImageData(0, 0, size, size);
-				(map as any).addImage("pin-emoji", imgData, { pixelRatio: 2 });
-			}
-		}
-
 		if (!map.getLayer("events-pins")) {
 			(map as any).addLayer({
 				id: "events-pins",
@@ -101,20 +85,33 @@ function setupPinLayer(map: MLMap) {
 				source: "events",
 				minzoom: 4,
 				layout: {
-					"icon-image": "pin-emoji",
+					"icon-image": ["concat", "pin-", ["get", "category"]],
 					"icon-size": [
 						"interpolate",
 						["linear"],
 						["zoom"],
-						12, 0.45,
-						20, 0.8
+						12, 0.8,
+						20, 1.3
 					],
 					"icon-allow-overlap": true,
 					"icon-anchor": "bottom"
 				}
 			});
 		}
+
+		ensureCategoryPins(map);
+
+		// listen for data changes to add icons for new categories
+		const handlerKey = "__eventsPinsSeedHandler";
+		if (!(map as any)[handlerKey]) {
+			const onSourceData = (e: any) => {
+				if (!e || e.sourceId !== "events") return;
+				ensureCategoryPins(map);
+			};
+			(map as any)[handlerKey] = onSourceData;
+			map.on("sourcedata", onSourceData);
+		}
 	} catch (e) {
-		// no-op if emoji image can't be created in this environment
+		// no-op in non-browser environments
 	}
 }

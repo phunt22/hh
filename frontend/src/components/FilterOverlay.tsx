@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import styles from "./FilterOverlay.module.css";
 import { formatCategoryLabel } from "../utils/categories";
+import { getCategoryColor, getReadableTextColor } from "../constants/categoryColors";
 
 type FilterOverlayProps = {
   isOpen: boolean;
@@ -48,6 +49,11 @@ export default function FilterOverlay({
         <div className={styles.grid}>
           {(categories ?? []).map((slug) => {
             const isChecked = selectedCategories.includes(slug);
+            const color = getCategoryColor(slug);
+            const textColor = getReadableTextColor(color);
+            const checkboxStyle = isChecked
+              ? { backgroundColor: color, borderColor: color, color: textColor }
+              : { borderColor: color };
             return (
               <button
                 key={slug}
@@ -55,7 +61,12 @@ export default function FilterOverlay({
                 onClick={() => onToggleCategory(slug)}
                 aria-pressed={isChecked}
               >
-                <span className={`${styles.checkbox} ${isChecked ? styles.checkboxChecked : ""}`} aria-hidden>
+                <span
+                  className={`${styles.checkbox} ${isChecked ? styles.checkboxChecked : ""}`}
+                  aria-hidden
+                  style={checkboxStyle}
+                  title={formatCategoryLabel(slug)}
+                >
                   {isChecked ? "✓" : ""}
                 </span>
                 <span>{formatCategoryLabel(slug)}</span>
