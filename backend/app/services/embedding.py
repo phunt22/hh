@@ -8,7 +8,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # Initialize OpenAI client
-openai.api_key = settings.openai_api_key
+openai.api_key = settings.gemini_api_key
+openai.base_url = settings.gemini_base_url
 
 
 class EmbeddingService:
@@ -93,14 +94,14 @@ class EmbeddingService:
     def prepare_event_text(self, title: str, description: str) -> str:
         """Prepare combined text for event embedding"""
         title = title or ""
-        description = description or ""
+        description = description.replace("Sourced from predicthq.com", "") or ""
         
         # Combine title and description with appropriate weighting
         combined = f"Title: {title}"
         if description:
             combined += f" Description: {description}"
         
-        return combined
+        return combined.strip()
 
     @staticmethod
     def cosine_similarity(embedding1: List[float], embedding2: List[float]) -> float:

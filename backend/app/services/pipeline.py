@@ -52,7 +52,3 @@ def fetch_and_store_events():
             session.merge(event_obj)
             session.commit()
 
-@app.post("/etl/trigger")
-def trigger_etl(background_tasks: BackgroundTasks):
-    background_tasks.add_task(fetch_and_store_events)
-    return {"status": "ETL triggered"}

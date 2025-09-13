@@ -141,7 +141,7 @@ async def run_etl_pipeline(
     """Background task to run the complete ETL pipeline"""
     
     try:
-        from app.core.database import AsyncSessionLocal
+        from core.database import AsyncSessionLocal
         
         def update_status(stage: str, data: Dict[str, Any]):
             """Update job status"""
@@ -203,7 +203,7 @@ async def calculate_similarities_task(
     """Background task to calculate similarities"""
     
     try:
-        from app.core.database import AsyncSessionLocal
+        from core.database import AsyncSessionLocal
         from sqlalchemy import select
         from app.models.event import Event
         

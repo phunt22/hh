@@ -55,21 +55,28 @@ async def trigger_etl(
         filters["end_date"] = end_date
     
     # Add background task
-    background_tasks.add_task(
-        run_etl_pipeline,
-        job_id,
-        max_events,
-        calculate_similarities,
-        filters
-    )
-    
-    return ETLStatus(
-        status="running",
-        message=f"ETL process started with job ID: {job_id}",
-        events_processed=0,
-        events_created=0,
-        events_updated=0
-    )
+    try:
+        background_tasks.add_task(
+            run_etl_pipeline,
+            job_id,
+            max_events,
+            calculate_similarities,
+            filters
+        )
+        return ETLStatus(
+            status="running",
+            message=f"ETL process started with job ID: {job_id}",
+            events_processed=0,
+            events_created=0,
+            events_updated=0
+        )
+    except Exception as e:
+        logger.error(f"Failed to start ETL background task: {e}")
+        etl_status_store[job_id].update({
+            "status": "error",
+            "message": f"Failed to start ETL process: {str(e)}"
+        })
+        raise HTTPException(status_code=500, detail=f"Failed to start ETL process: {str(e)}")
 
 
 @router.get("/status/{job_id}", response_model=ETLStatus)
@@ -170,6 +177,7 @@ async def run_etl_pipeline(
             })
             
             # Calculate similarities if requested
+            '''
             if calculate_similarities and result["status"] == "completed":
                 etl_status_store[job_id]["message"] = "Calculating event similarities..."
                 
@@ -186,7 +194,7 @@ async def run_etl_pipeline(
                         session, event_ids[:500]  # Limit for performance
                     )
                     etl_status_store[job_id]["message"] = f"ETL completed. Calculated {similarities_count} similarities."
-    
+            '''
     except Exception as e:
         logger.error(f"ETL pipeline error for job {job_id}: {e}")
         etl_status_store[job_id].update({

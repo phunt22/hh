@@ -6,7 +6,6 @@ from app.models.event import Event, EventSimilarity
 from app.services.embedding import embedding_service
 from app.schemas.event import SimilarEvent, SimilaritySearchRequest, SimilaritySearchResponse, EventResponse
 import logging
-import asyncio
 
 logger = logging.getLogger(__name__)
 

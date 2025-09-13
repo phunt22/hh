@@ -167,6 +167,8 @@ class PredictHQService:
             "location": location_str,
             "start": start_date,
             "end": end_date,
+            "attendance": int(raw_event.get("phq_attendance", "0")),
+            "spend_amount": int(raw_event.get("predicted_event_spend", "0")),
             "predicthq_updated": updated_at or datetime.now(timezone.utc)
         }
 

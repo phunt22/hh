@@ -4,7 +4,6 @@ from contextlib import asynccontextmanager
 import logging
 from app.core.database import create_db_and_tables
 from app.api.routes import etl, events
-from app.core.config import settings
 
 # Configure logging
 logging.basicConfig(

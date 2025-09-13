@@ -1,10 +1,9 @@
 from sqlmodel import SQLModel, Field, Column
-from sqlalchemy import DateTime, Text, Index
+from sqlalchemy import DateTime, Integer, Text, Index
 from sqlalchemy.dialects.postgresql import ARRAY
 from pgvector.sqlalchemy import Vector
 from typing import Optional, List
 from datetime import datetime
-import numpy as np
 
 
 class Event(SQLModel, table=True):
@@ -26,7 +25,9 @@ class Event(SQLModel, table=True):
     start: Optional[datetime] = Field(sa_column=Column(DateTime(timezone=True)), default=None)
     end: Optional[datetime] = Field(sa_column=Column(DateTime(timezone=True)), default=None)
     location: Optional[str] = Field(default="")
-    
+    attendance: Optional[int] = Field(sa_column=Column(Integer))
+    spend_amount: Optional[int] = Field(sa_column=Column(Integer))
+      
     # Additional fields for better event tracking
     predicthq_updated: Optional[datetime] = Field(sa_column=Column(DateTime(timezone=True)), default=None)
     created_at: datetime = Field(sa_column=Column(DateTime(timezone=True)), default_factory=datetime.utcnow)
