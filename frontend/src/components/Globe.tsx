@@ -78,7 +78,7 @@ export default function Globe({
 
     if (valid.length === 1) {
       const one = valid[0];
-      map.easeTo({ center: [one.lng, one.lat], zoom: Math.max(12, map.getZoom()), duration: 500 });
+      map.easeTo({ center: [one.lng, one.lat], zoom: Math.max(12, map.getZoom()), duration: 900 });
       return;
     }
 
@@ -90,7 +90,7 @@ export default function Globe({
       if (r.lat > maxLat) maxLat = r.lat;
     }
     try {
-      map.fitBounds([[minLng, minLat], [maxLng, maxLat]] as any, { padding: 80, duration: 600 });
+      map.fitBounds([[minLng, minLat], [maxLng, maxLat]] as any, { padding: 80, duration: 900 });
     } catch {
       // ignore
     }
