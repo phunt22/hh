@@ -1,0 +1,1200 @@
+{
+  "count": 510,
+  "overflow": false,
+  "next": "https://api.predicthq.com/v1/events/?limit=10&offset=10&q=taylor+swift",
+  "previous": null,
+  "results": [
+    {
+      "relevance": 251.2677,
+      "id": "6QyEoZ4ej5dYCx9C2K",
+      "title": "The Taylor Party - Taylor Swift Night",
+      "alternate_titles": [
+        "KISS 107.9  Presents: The Taylor Party: Taylor Swift Night - 18+",
+        "The Taylor Party at Ace Of Spades"
+      ],
+      "description": "Sourced from predicthq.com",
+      "category": "community",
+      "rank": 50,
+      "local_rank": 69,
+      "phq_attendance": 1000,
+      "entities": [
+        {
+          "entity_id": "KhdtFF4THHAvGNzF8QWeXr",
+          "name": "Ace of Spades",
+          "type": "venue",
+          "formatted_address": "1417 R St, Sacramento, CA 95811, USA"
+        }
+      ],
+      "duration": 0,
+      "start": "2025-06-28T03:00:00Z",
+      "start_local": "2025-06-27T20:00:00",
+      "end": "2025-06-28T03:00:00Z",
+      "end_local": "2025-06-27T20:00:00",
+      "updated": "2025-07-29T18:01:35Z",
+      "first_seen": "2025-03-13T00:44:45Z",
+      "timezone": "America/Los_Angeles",
+      "location": [
+        -121.490905,
+        38.569935
+      ],
+      "geo": {
+        "geometry": {
+          "coordinates": [
+            -121.490905,
+            38.569935
+          ],
+          "type": "Point"
+        },
+        "placekey": "223-222@5vg-tgc-68v",
+        "address": {
+          "country_code": "US",
+          "formatted_address": "1417 R St, Sacramento, CA 95811, USA",
+          "postcode": "95811",
+          "locality": "Sacramento",
+          "region": "California"
+        }
+      },
+      "impact_patterns": [
+        {
+          "vertical": "accommodation",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-06-27",
+              "value": 1000,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "hospitality",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-06-26",
+              "value": 220,
+              "position": "leading"
+            },
+            {
+              "date_local": "2025-06-27",
+              "value": 1000,
+              "position": "event_day"
+            },
+            {
+              "date_local": "2025-06-28",
+              "value": 30,
+              "position": "lagging"
+            }
+          ]
+        },
+        {
+          "vertical": "retail",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-06-26",
+              "value": 100,
+              "position": "leading"
+            },
+            {
+              "date_local": "2025-06-27",
+              "value": 1000,
+              "position": "event_day"
+            },
+            {
+              "date_local": "2025-06-28",
+              "value": 50,
+              "position": "lagging"
+            }
+          ]
+        }
+      ],
+      "scope": "locality",
+      "country": "US",
+      "place_hierarchies": [
+        [
+          "6295630",
+          "6255149",
+          "6252001",
+          "5332921",
+          "5389519",
+          "5389489"
+        ]
+      ],
+      "state": "active",
+      "brand_safe": true,
+      "private": false,
+      "predicted_event_spend": 20907,
+      "predicted_event_spend_industries": {
+        "accommodation": 0,
+        "hospitality": 14502,
+        "transportation": 6404
+      }
+    },
+    {
+      "relevance": 243.80939,
+      "id": "E3N7xPdLsSEQptt6pa",
+      "title": "The Taylor Swift Experience: All Ages",
+      "alternate_titles": [
+        "The Taylor Swift Experience: Taylor's Version"
+      ],
+      "description": "Sourced from predicthq.com",
+      "category": "community",
+      "rank": 30,
+      "local_rank": 56,
+      "phq_attendance": 100,
+      "entities": [],
+      "duration": 2700,
+      "start": "2025-10-11T20:00:00Z",
+      "start_local": "2025-10-11T16:00:00",
+      "end": "2025-10-11T20:45:00Z",
+      "end_local": "2025-10-11T16:45:00",
+      "updated": "2025-08-24T03:12:11Z",
+      "first_seen": "2025-08-17T02:43:40Z",
+      "timezone": "America/New_York",
+      "location": [
+        -71.5331,
+        43.22439
+      ],
+      "geo": {
+        "geometry": {
+          "coordinates": [
+            -71.5331,
+            43.22439
+          ],
+          "type": "Point"
+        },
+        "placekey": "1phaizmxid@62m-dhm-snq",
+        "address": {
+          "country_code": "US",
+          "formatted_address": "Institute Drive, Concord, NH 03301, United States of America",
+          "locality": "Concord",
+          "postcode": "03301",
+          "region": "New Hampshire"
+        }
+      },
+      "impact_patterns": [
+        {
+          "vertical": "accommodation",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-10-11",
+              "value": 100,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "hospitality",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-10-11",
+              "value": 100,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "retail",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-10-11",
+              "value": 100,
+              "position": "event_day"
+            }
+          ]
+        }
+      ],
+      "scope": "locality",
+      "country": "US",
+      "place_hierarchies": [
+        [
+          "6295630",
+          "6255149",
+          "6252001",
+          "5090174",
+          "5089480",
+          "5084886",
+          "5084868"
+        ]
+      ],
+      "state": "active",
+      "brand_safe": true,
+      "private": false,
+      "predicted_event_spend": 1531,
+      "predicted_event_spend_industries": {
+        "accommodation": 0,
+        "hospitality": 1141,
+        "transportation": 390
+      },
+      "phq_labels": [
+        {
+          "label": "music",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "relevance": 241.16232,
+      "id": "7Ccv2SaBbBdDChYhYb",
+      "title": "The Taylor Swift Experience: All Ages",
+      "alternate_titles": [
+        "The Taylor Swift Experience: Taylor's Version"
+      ],
+      "description": "Sourced from predicthq.com",
+      "category": "community",
+      "rank": 30,
+      "local_rank": 56,
+      "phq_attendance": 100,
+      "entities": [],
+      "duration": 2700,
+      "start": "2025-09-06T20:00:00Z",
+      "start_local": "2025-09-06T16:00:00",
+      "end": "2025-09-06T20:45:00Z",
+      "end_local": "2025-09-06T16:45:00",
+      "updated": "2025-09-07T02:31:02Z",
+      "first_seen": "2025-08-17T02:43:37Z",
+      "timezone": "America/New_York",
+      "location": [
+        -71.5331,
+        43.22439
+      ],
+      "geo": {
+        "geometry": {
+          "coordinates": [
+            -71.5331,
+            43.22439
+          ],
+          "type": "Point"
+        },
+        "placekey": "1phaizmxid@62m-dhm-snq",
+        "address": {
+          "country_code": "US",
+          "formatted_address": "Institute Drive, Concord, NH 03301, United States of America",
+          "locality": "Concord",
+          "postcode": "03301",
+          "region": "New Hampshire"
+        }
+      },
+      "impact_patterns": [
+        {
+          "vertical": "accommodation",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-09-06",
+              "value": 100,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "hospitality",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-09-06",
+              "value": 100,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "retail",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-09-06",
+              "value": 100,
+              "position": "event_day"
+            }
+          ]
+        }
+      ],
+      "scope": "locality",
+      "country": "US",
+      "place_hierarchies": [
+        [
+          "6295630",
+          "6255149",
+          "6252001",
+          "5090174",
+          "5089480",
+          "5084886",
+          "5084868"
+        ]
+      ],
+      "state": "active",
+      "brand_safe": true,
+      "private": false,
+      "predicted_event_spend": 1531,
+      "predicted_event_spend_industries": {
+        "accommodation": 0,
+        "hospitality": 1141,
+        "transportation": 390
+      },
+      "phq_labels": [
+        {
+          "label": "music",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "relevance": 239.54913,
+      "id": "4pxTh7oDTUraYsqVmV",
+      "title": "The Taylor Swift Experience: All Ages",
+      "alternate_titles": [
+        "The Taylor Swift Experience: Taylor's Version"
+      ],
+      "description": "Sourced from predicthq.com",
+      "category": "community",
+      "rank": 30,
+      "local_rank": 56,
+      "phq_attendance": 100,
+      "entities": [],
+      "duration": 2700,
+      "start": "2025-09-26T21:30:00Z",
+      "start_local": "2025-09-26T17:30:00",
+      "end": "2025-09-26T22:15:00Z",
+      "end_local": "2025-09-26T18:15:00",
+      "updated": "2025-08-24T02:37:57Z",
+      "first_seen": "2025-08-17T02:43:37Z",
+      "timezone": "America/New_York",
+      "location": [
+        -71.5331,
+        43.22439
+      ],
+      "geo": {
+        "geometry": {
+          "coordinates": [
+            -71.5331,
+            43.22439
+          ],
+          "type": "Point"
+        },
+        "placekey": "1phaizmxid@62m-dhm-snq",
+        "address": {
+          "country_code": "US",
+          "formatted_address": "Institute Drive, Concord, NH 03301, United States of America",
+          "locality": "Concord",
+          "postcode": "03301",
+          "region": "New Hampshire"
+        }
+      },
+      "impact_patterns": [
+        {
+          "vertical": "accommodation",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-09-26",
+              "value": 100,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "hospitality",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-09-26",
+              "value": 100,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "retail",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-09-26",
+              "value": 100,
+              "position": "event_day"
+            }
+          ]
+        }
+      ],
+      "scope": "locality",
+      "country": "US",
+      "place_hierarchies": [
+        [
+          "6295630",
+          "6255149",
+          "6252001",
+          "5090174",
+          "5089480",
+          "5084886",
+          "5084868"
+        ]
+      ],
+      "state": "active",
+      "brand_safe": true,
+      "private": false,
+      "predicted_event_spend": 1531,
+      "predicted_event_spend_industries": {
+        "accommodation": 0,
+        "hospitality": 1141,
+        "transportation": 390
+      },
+      "phq_labels": [
+        {
+          "label": "music",
+          "weight": 1.0
+        }
+      ]
+    },
+    {
+      "relevance": 216.5737,
+      "id": "EUQEB8GbgiqwxJAheu",
+      "title": "Taylor Swift Trivia & Dance Party",
+      "alternate_titles": [
+        "Taylor Swift Trivia and Dance Party at Crystal Ballroom at Somerville Theatre"
+      ],
+      "description": "Sourced from predicthq.com",
+      "category": "community",
+      "rank": 49,
+      "local_rank": 61,
+      "phq_attendance": 900,
+      "entities": [
+        {
+          "entity_id": "9kxD2n3T8dfu2cnYGS8xZB",
+          "name": "Somerville Theatre",
+          "type": "venue",
+          "formatted_address": "55 Davis Square, Somerville, MA 02144, USA"
+        }
+      ],
+      "duration": 0,
+      "start": "2025-07-05T23:00:00Z",
+      "start_local": "2025-07-05T19:00:00",
+      "end": "2025-07-05T23:00:00Z",
+      "end_local": "2025-07-05T19:00:00",
+      "updated": "2025-07-06T03:23:07Z",
+      "first_seen": "2025-06-11T03:19:34Z",
+      "timezone": "America/New_York",
+      "location": [
+        -71.1230739,
+        42.39672
+      ],
+      "geo": {
+        "geometry": {
+          "coordinates": [
+            -71.1230739,
+            42.39672
+          ],
+          "type": "Point"
+        },
+        "placekey": "22c-223@62j-sjz-6ff",
+        "address": {
+          "country_code": "US",
+          "formatted_address": "55 Davis Square, Somerville, MA 02144, USA",
+          "postcode": "02144",
+          "locality": "Somerville",
+          "region": "Massachusetts"
+        }
+      },
+      "impact_patterns": [
+        {
+          "vertical": "accommodation",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-07-05",
+              "value": 900,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "hospitality",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-07-04",
+              "value": 198,
+              "position": "leading"
+            },
+            {
+              "date_local": "2025-07-05",
+              "value": 900,
+              "position": "event_day"
+            },
+            {
+              "date_local": "2025-07-06",
+              "value": 27,
+              "position": "lagging"
+            }
+          ]
+        },
+        {
+          "vertical": "retail",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-07-04",
+              "value": 90,
+              "position": "leading"
+            },
+            {
+              "date_local": "2025-07-05",
+              "value": 900,
+              "position": "event_day"
+            },
+            {
+              "date_local": "2025-07-06",
+              "value": 45,
+              "position": "lagging"
+            }
+          ]
+        }
+      ],
+      "scope": "locality",
+      "country": "US",
+      "place_hierarchies": [
+        [
+          "6295630",
+          "6255149",
+          "6252001",
+          "6254926",
+          "4943909",
+          "4951267",
+          "4955085"
+        ],
+        [
+          "6295630",
+          "6255149",
+          "6252001",
+          "6254926",
+          "4952349",
+          "4931029",
+          "4930956"
+        ]
+      ],
+      "state": "active",
+      "brand_safe": true,
+      "private": false,
+      "predicted_event_spend": 19920,
+      "predicted_event_spend_industries": {
+        "accommodation": 1314,
+        "hospitality": 13059,
+        "transportation": 5546
+      },
+      "phq_labels": [
+        {
+          "label": "cultural",
+          "weight": 0.653
+        },
+        {
+          "label": "music",
+          "weight": 0.347
+        }
+      ]
+    },
+    {
+      "relevance": 213.75772,
+      "id": "8s8LbpwYgyQa8v23SH",
+      "title": "Taylor Swift Dance Party at The 27 Club",
+      "alternate_titles": [
+        "Lifestyles Night - Taylor Swift - Life Of A Showgirl"
+      ],
+      "description": "Sourced from predicthq.com",
+      "category": "performing-arts",
+      "rank": 34,
+      "local_rank": 46,
+      "phq_attendance": 160,
+      "entities": [
+        {
+          "entity_id": "rCYgimC4yWWpsvhZsGsca9",
+          "name": "27 Club",
+          "type": "venue",
+          "formatted_address": "27 York St, Ottawa, ON K1N 5S7, Canada"
+        }
+      ],
+      "duration": 0,
+      "start": "2025-10-04T03:00:00Z",
+      "start_local": "2025-10-03T23:00:00",
+      "end": "2025-10-04T03:00:00Z",
+      "end_local": "2025-10-03T23:00:00",
+      "predicted_end": "2025-10-04T05:10:00Z",
+      "predicted_end_local": "2025-10-04T01:10:00",
+      "updated": "2025-09-11T05:24:38Z",
+      "first_seen": "2025-08-30T18:44:45Z",
+      "timezone": "America/Toronto",
+      "location": [
+        -75.6940683,
+        45.428062
+      ],
+      "geo": {
+        "geometry": {
+          "coordinates": [
+            -75.6940683,
+            45.428062
+          ],
+          "type": "Point"
+        },
+        "placekey": "22g-222@65x-9jn-kzz",
+        "address": {
+          "country_code": "CA",
+          "formatted_address": "27 York St, Ottawa, ON K1N 5S7, Canada",
+          "postcode": "K1N 5S7",
+          "locality": "Ottawa",
+          "region": "Ontario"
+        }
+      },
+      "impact_patterns": [
+        {
+          "vertical": "accommodation",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-10-03",
+              "value": 160,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "hospitality",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-10-03",
+              "value": 160,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "retail",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-10-03",
+              "value": 160,
+              "position": "event_day"
+            }
+          ]
+        }
+      ],
+      "scope": "locality",
+      "country": "CA",
+      "place_hierarchies": [
+        [
+          "6295630",
+          "6255149",
+          "6251999",
+          "6093943",
+          "8581623",
+          "6094816",
+          "6061551"
+        ],
+        [
+          "6295630",
+          "6255149",
+          "6251999",
+          "6093943",
+          "8581623",
+          "6094816",
+          "6094817"
+        ]
+      ],
+      "state": "active",
+      "brand_safe": true,
+      "private": false,
+      "predicted_event_spend": 3643,
+      "predicted_event_spend_industries": {
+        "accommodation": 0,
+        "hospitality": 2019,
+        "transportation": 1623
+      },
+      "phq_labels": [
+        {
+          "label": "general-theatre",
+          "weight": 0.659
+        },
+        {
+          "label": "celebration",
+          "weight": 0.341
+        }
+      ]
+    },
+    {
+      "relevance": 211.3162,
+      "id": "4n3wXH72TXo2Mfv3oY",
+      "title": "The Taylor Party: Taylor Swift Night",
+      "alternate_titles": [
+        "The Taylor Party at 9:30 Club"
+      ],
+      "description": "Sourced from predicthq.com",
+      "category": "community",
+      "rank": 52,
+      "local_rank": 60,
+      "phq_attendance": 1200,
+      "entities": [
+        {
+          "entity_id": "f78hZxUbgkK8mRqwnEyDFw",
+          "name": "9:30 Club",
+          "type": "venue",
+          "formatted_address": "815 V St NW, Washington, DC 20001, USA"
+        }
+      ],
+      "duration": 0,
+      "start": "2025-07-19T00:00:00Z",
+      "start_local": "2025-07-18T20:00:00",
+      "end": "2025-07-19T00:00:00Z",
+      "end_local": "2025-07-18T20:00:00",
+      "updated": "2025-06-10T09:39:08Z",
+      "first_seen": "2025-03-13T00:35:21Z",
+      "timezone": "America/New_York",
+      "location": [
+        -77.0237,
+        38.918
+      ],
+      "geo": {
+        "geometry": {
+          "coordinates": [
+            -77.0237,
+            38.918
+          ],
+          "type": "Point"
+        },
+        "placekey": "22h-226@63r-6cz-h3q",
+        "address": {
+          "country_code": "US",
+          "formatted_address": "815 V St NW, Washington, DC 20001, USA",
+          "postcode": "20001",
+          "locality": "Washington",
+          "region": "District of Columbia"
+        }
+      },
+      "impact_patterns": [
+        {
+          "vertical": "accommodation",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-07-17",
+              "value": 180,
+              "position": "leading"
+            },
+            {
+              "date_local": "2025-07-18",
+              "value": 1200,
+              "position": "event_day"
+            },
+            {
+              "date_local": "2025-07-19",
+              "value": 60,
+              "position": "lagging"
+            }
+          ]
+        },
+        {
+          "vertical": "hospitality",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-07-17",
+              "value": 264,
+              "position": "leading"
+            },
+            {
+              "date_local": "2025-07-18",
+              "value": 1200,
+              "position": "event_day"
+            },
+            {
+              "date_local": "2025-07-19",
+              "value": 36,
+              "position": "lagging"
+            }
+          ]
+        },
+        {
+          "vertical": "retail",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-07-17",
+              "value": 120,
+              "position": "leading"
+            },
+            {
+              "date_local": "2025-07-18",
+              "value": 1200,
+              "position": "event_day"
+            },
+            {
+              "date_local": "2025-07-19",
+              "value": 60,
+              "position": "lagging"
+            }
+          ]
+        }
+      ],
+      "scope": "locality",
+      "country": "US",
+      "place_hierarchies": [
+        [
+          "6295630",
+          "6255149",
+          "6252001",
+          "4138106",
+          "4140987",
+          "4141067"
+        ],
+        [
+          "6295630",
+          "6255149",
+          "6252001",
+          "4138106",
+          "4140987",
+          "4140963"
+        ]
+      ],
+      "state": "active",
+      "brand_safe": true,
+      "private": false,
+      "predicted_event_spend": 26530,
+      "predicted_event_spend_industries": {
+        "accommodation": 1630,
+        "hospitality": 17568,
+        "transportation": 7331
+      },
+      "phq_labels": [
+        {
+          "label": "music",
+          "weight": 0.347
+        },
+        {
+          "label": "nightlife",
+          "weight": 0.331
+        },
+        {
+          "label": "cultural",
+          "weight": 0.322
+        }
+      ]
+    },
+    {
+      "relevance": 210.60088,
+      "id": "BWKc7aJ3sw3bWif4jd",
+      "title": "The Taylor Party - Taylor Swift Night",
+      "alternate_titles": [
+        "The Taylor Party at Marquis Theater"
+      ],
+      "description": "Sourced from predicthq.com",
+      "category": "community",
+      "rank": 39,
+      "local_rank": 56,
+      "phq_attendance": 280,
+      "entities": [
+        {
+          "entity_id": "z5ZjvTVtByby5pJ2yqXFKu",
+          "name": "Marquis Theater",
+          "type": "venue",
+          "formatted_address": "2009 Larimer St, Denver, CO 80205, USA"
+        }
+      ],
+      "duration": 0,
+      "start": "2025-06-21T02:00:00Z",
+      "start_local": "2025-06-20T20:00:00",
+      "end": "2025-06-21T02:00:00Z",
+      "end_local": "2025-06-20T20:00:00",
+      "updated": "2025-07-29T18:01:35Z",
+      "first_seen": "2025-04-15T18:13:52Z",
+      "timezone": "America/Denver",
+      "location": [
+        -104.992521,
+        39.753375
+      ],
+      "geo": {
+        "geometry": {
+          "coordinates": [
+            -104.992521,
+            39.753375
+          ],
+          "type": "Point"
+        },
+        "placekey": "228-222@5q9-bqt-8jv",
+        "address": {
+          "country_code": "US",
+          "formatted_address": "2009 Larimer St, Denver, CO 80205, USA",
+          "postcode": "80205",
+          "locality": "Denver",
+          "region": "Colorado"
+        }
+      },
+      "impact_patterns": [
+        {
+          "vertical": "accommodation",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-06-20",
+              "value": 280,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "hospitality",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-06-20",
+              "value": 280,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "retail",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-06-20",
+              "value": 280,
+              "position": "event_day"
+            }
+          ]
+        }
+      ],
+      "scope": "locality",
+      "country": "US",
+      "place_hierarchies": [
+        [
+          "6295630",
+          "6255149",
+          "6252001",
+          "5417618",
+          "5419396",
+          "5419384"
+        ]
+      ],
+      "state": "active",
+      "brand_safe": true,
+      "private": false,
+      "predicted_event_spend": 3729,
+      "predicted_event_spend_industries": {
+        "accommodation": 0,
+        "hospitality": 2625,
+        "transportation": 1104
+      }
+    },
+    {
+      "relevance": 193.53421,
+      "id": "AYYgkbffM4Xqd84Uso",
+      "title": "The Taylor Swift Experience",
+      "description": "Sourced from predicthq.com - The No.1 Taylor Swift Tribute, as seen by 50,000 swifties to date! Feat.. Sabrina C - The short n sweet tribute to Sabrina Carpenter!",
+      "category": "performing-arts",
+      "rank": 26,
+      "local_rank": 47,
+      "phq_attendance": 63,
+      "entities": [],
+      "duration": 5400,
+      "start": "2025-07-26T12:00:00Z",
+      "start_local": "2025-07-26T13:00:00",
+      "end": "2025-07-26T13:30:00Z",
+      "end_local": "2025-07-26T14:30:00",
+      "updated": "2025-06-12T14:30:37Z",
+      "first_seen": "2025-06-12T03:14:52Z",
+      "timezone": "Europe/Dublin",
+      "location": [
+        -6.670496499999999,
+        53.2134136
+      ],
+      "geo": {
+        "geometry": {
+          "coordinates": [
+            -6.670496499999999,
+            53.2134136
+          ],
+          "type": "Point"
+        },
+        "placekey": "@4dp-5bt-ht9",
+        "address": {
+          "country_code": "IE",
+          "formatted_address": "Devoy Quarter, Naas, Ireland",
+          "locality": "Naas",
+          "region": "County Kildare"
+        }
+      },
+      "impact_patterns": [
+        {
+          "vertical": "accommodation",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-07-26",
+              "value": 63,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "hospitality",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-07-26",
+              "value": 63,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "retail",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-07-26",
+              "value": 63,
+              "position": "event_day"
+            }
+          ]
+        }
+      ],
+      "scope": "locality",
+      "country": "IE",
+      "place_hierarchies": [
+        [
+          "6295630",
+          "6255148",
+          "2963597",
+          "7521314",
+          "2963435",
+          "2962334"
+        ]
+      ],
+      "state": "active",
+      "brand_safe": true,
+      "private": false,
+      "predicted_event_spend": 1500,
+      "predicted_event_spend_industries": {
+        "accommodation": 0,
+        "hospitality": 946,
+        "transportation": 554
+      }
+    },
+    {
+      "relevance": 192.17758,
+      "id": "5Hjuq2S9p2GnJY2SfZ",
+      "title": "Taylor: A Tribute to the Eras of Taylor Swift",
+      "description": "Sourced from predicthq.com - Calling all Swifties – make a 'sweet escape' to the world of Taylor Swift with Taylor: A Tribute to the Eras of Taylor Swift!\n\nShowtime presents Josette with international band and dancers in this joyous, effervescent concert experience, complete with sparkly costumes, cosmic stage production and over 20 exquisite renditions of Taylor's biggest hits from every era of her career, including Shake It Off, Anti-Hero, Cruel Summer, You Belong With Me, Love Story, I Knew You Were Trouble, Blank Space, We Are Never Ever Getting Back Together, Bad Blood, Our Song, Lover and more.\n\nJoin with them for a fun night of singing, dancing and celebrating Taylor together!\n\nDon't miss your chance to relive the greatest pop concert tour in history and revel in all things 'Taylor'. Book now. \n\nThis is a tribute show and is not associated with Taylor Swift Productions.",
+      "category": "performing-arts",
+      "rank": 30,
+      "local_rank": 58,
+      "phq_attendance": 99,
+      "entities": [],
+      "duration": 7200,
+      "start": "2025-09-22T09:00:00Z",
+      "start_local": "2025-09-22T19:00:00",
+      "end": "2025-09-22T11:00:00Z",
+      "end_local": "2025-09-22T21:00:00",
+      "updated": "2025-04-27T20:23:17Z",
+      "first_seen": "2025-04-24T06:53:11Z",
+      "timezone": "Australia/Melbourne",
+      "location": [
+        142.1983408,
+        -36.7156748
+      ],
+      "geo": {
+        "geometry": {
+          "coordinates": [
+            142.1983408,
+            -36.7156748
+          ],
+          "type": "Point"
+        },
+        "placekey": "@nhz-n5f-hbk",
+        "address": {
+          "country_code": "AU",
+          "formatted_address": "Pynsent Street, Horsham VIC 3400, Australia",
+          "locality": "Horsham",
+          "postcode": "3400",
+          "region": "Victoria"
+        }
+      },
+      "impact_patterns": [
+        {
+          "vertical": "accommodation",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-09-22",
+              "value": 99,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "hospitality",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-09-22",
+              "value": 99,
+              "position": "event_day"
+            }
+          ]
+        },
+        {
+          "vertical": "retail",
+          "impact_type": "phq_attendance",
+          "impacts": [
+            {
+              "date_local": "2025-09-22",
+              "value": 99,
+              "position": "event_day"
+            }
+          ]
+        }
+      ],
+      "scope": "locality",
+      "country": "AU",
+      "place_hierarchies": [
+        [
+          "6295630",
+          "6255151",
+          "2077456",
+          "2145234",
+          "7839554",
+          "2163055"
+        ]
+      ],
+      "state": "active",
+      "brand_safe": true,
+      "private": false,
+      "predicted_event_spend": 1868,
+      "predicted_event_spend_industries": {
+        "accommodation": 0,
+        "hospitality": 1174,
+        "transportation": 693
+      },
+      "phq_labels": [
+        {
+          "label": "general-theatre",
+          "weight": 0.426
+        },
+        {
+          "label": "concert",
+          "weight": 0.237
+        },
+        {
+          "label": "community-event",
+          "weight": 0.214
+        },
+        {
+          "label": "lifestyle",
+          "weight": 0.122
+        }
+      ]
+    }
+  ]
+}
