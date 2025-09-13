@@ -313,7 +313,7 @@ class EventsCacheService:
         # Try to get from cache first
         try:
             logger.debug("Attempting to retrieve busiest cities from cache")
-            cached_data = await redis_cache.redis_client.get(cache_key)
+            cached_data = redis_cache.redis_client.get(cache_key)
             if cached_data:
                 busiest_cities = json.loads(cached_data)
                 logger.info(f"Retrieved {len(busiest_cities)} busiest cities from cache (key={cache_key})")
@@ -350,7 +350,10 @@ class EventsCacheService:
 
         for idx, row in enumerate(result):
             # For each busiest city, fetch its top 5 events
-            city_name = row.city.strip()
+            city_name = row.city.strip() if row.city else ""
+            if not city_name:
+                logger.warning(f"Skipping row {idx+1} with empty city name")
+                continue
             logger.debug(f"Processing city {idx+1}: '{city_name}' with total_attendance={row.total_attendance}")
 
             top_events_for_city = await self._get_top_events_for_city(
@@ -383,7 +386,7 @@ class EventsCacheService:
         # Cache the results
         try:
             logger.debug(f"Caching {len(busiest_cities_data)} busiest cities with key={cache_key} and TTL={self.busiest_cities_ttl}")
-            await redis_cache.redis_client.setex(
+            redis_cache.redis_client.setex(
                 cache_key,
                 self.busiest_cities_ttl,
                 json.dumps(busiest_cities_data, default=str)
