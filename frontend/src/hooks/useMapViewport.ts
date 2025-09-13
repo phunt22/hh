@@ -52,14 +52,28 @@ export function useMapViewport({
 	}, [map, onViewportQuery, fetchDebounceMs, maxClientPoints]);
 
 	useEffect(() => {
-		if (!map || !data) return;
-		
-		const src = map.getSource("events") as GeoJSONSource | undefined;
-		if (src) {
-			const capped = data.slice(0, maxClientPoints);
-			src.setData(toFeatureCollection(capped) as any);
-			setPointCount(capped.length);
+		if (!map || !data || data.length === 0) return;
+
+		const applyData = () => {
+			const src = map.getSource("events") as GeoJSONSource | undefined;
+			if (src) {
+				const capped = data.slice(0, maxClientPoints);
+				src.setData(toFeatureCollection(capped) as any);
+				setPointCount(capped.length);
+			}
+		};
+
+		// If style isn't loaded yet, wait for it before calling getSource
+		const isLoaded = (map as any).isStyleLoaded && (map as any).isStyleLoaded();
+		if (!isLoaded) {
+			const onLoad = () => applyData();
+			map.once("load", onLoad);
+			return () => {
+				map.off("load", onLoad);
+			};
 		}
+
+		applyData();
 	}, [map, data, maxClientPoints]);
 
 	return { pointCount };

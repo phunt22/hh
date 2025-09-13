@@ -20,12 +20,13 @@ export function useSearch() {
         try {
             const res: SimilaritySearchResponse = await EventsAPI.searchSimilarEvents({
                 query_text: query,
-                limit: 25, // TODO probably too high?
+                // limit: 25, 
                 min_similarity: 0.6 // TODO tune this
             });
             const results: EventPoint[] = res.similar_events.map(se => mapBackendEventToEventPoint(se.event as any));
-            setSearchResults(results);
-            setIsSearchActive(true);
+            const hasResults = (res.total_found ?? results.length) > 0 && results.length > 0;
+            setSearchResults(hasResults ? results : []);
+            setIsSearchActive(hasResults);
             return { success: true, results } as const;
         } catch (err: any) {
             console.warn('Search failed', err);

@@ -1,7 +1,8 @@
 import type { EventPoint } from '../types';
 import { normalizeCategorySlug } from '../utils/categories';
 
-const API_BASE_URL = 'https://fastapi-backend-e0m2.onrender.com/api/v1';
+const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'https://fastapi-backend-e0m2.onrender.com/api/v1';
+
 
 export interface BackendEvent {
   id: string;
@@ -146,7 +147,8 @@ export class EventsAPI {
     });
     
     if (!response.ok) {
-      throw new Error(`Failed to search similar events: ${response.statusText}`);
+      const txt = await response.text().catch(() => '');
+      throw new Error(`Failed to search similar events: ${response.status} ${response.statusText}${txt ? ` - ${txt}` : ''}`);
     }
     
     return response.json();
