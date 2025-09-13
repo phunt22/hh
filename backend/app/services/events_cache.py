@@ -362,10 +362,22 @@ class EventsCacheService:
             )
             logger.debug(f"Fetched {len(top_events_for_city)} top events for city '{city_name}'")
 
+            # Get event counts for the last 24 hours in 3-hour intervals
+            event_counts_24h = await self._get_event_counts_by_interval(
+                session=session,
+                city_name=city_name,
+                end_time=end_time,
+                hours_window=24,
+                interval_hours=3
+            )
+            logger.debug(f"Fetched {len(event_counts_24h)} 3-hour interval event counts for city '{city_name}'")
+
+
             busiest_cities_data.append({
                 "city": city_name, # .strip() to remove leading/trailing whitespace
                 "total_attendance": row.total_attendance,
-                "top_events": [event.dict() for event in top_events_for_city] # Convert EventResponse to dict
+                "top_events": [event.dict() for event in top_events_for_city], # Convert EventResponse to dict
+                "event_counts": event_counts_24h,
             })
 
         # Cache the results
@@ -425,6 +437,66 @@ class EventsCacheService:
             )
             events = []
         return [EventResponse.from_orm(event) for event in events]
+
+    async def _get_event_counts_by_interval(
+        self,
+        session: AsyncSession,
+        city_name: str,
+        end_time: datetime,
+        hours_window: int = 24,
+        interval_hours: int = 3
+    ) -> List[Dict[str, Any]]:
+        """
+        Get the count of events for a given city in specified time intervals
+        over a rolling window (e.g., every 3 hours for the last 24 hours).
+        """
+
+        logger.debug(
+            f"Fetching event counts for city '{city_name}'"
+            f"for the last {hours_window} hours in {interval_hours}-hour intervals"
+        )
+        
+        event_counts = []
+        now = end_time.replace(minute=0, second=0, microsecond=0) # Round to nearest hour
+        
+        # Calculate event counts for the last `hours_window` hours in `interval_hours` chunks
+        for i in range(0, hours_window, interval_hours):
+            interval_end = now - timedelta(hours=i)
+            interval_start = interval_end - timedelta(hours=interval_hours)
+            
+            # Efficiently query event count for the interval
+            query = (
+                select(func.count(Event.id))
+                .where(
+                    Event.city == city_name,
+                    Event.start >= interval_start,
+                    Event.start < interval_end
+                )
+            )
+            
+            try:
+                result = await session.execute(query)
+                count = result.scalar_one()
+                event_counts.append({
+                    "interval_end": interval_end.isoformat(),
+                    "interval_start": interval_start.isoformat(),
+                    "event_count": count
+                })
+            except Exception as e:
+                logger.error(
+                    f"Error fetching event count for city '{city_name}' "
+                    f"in interval {interval_start} to {interval_end}: {e}"
+                )
+                event_counts.append({
+                    "interval_end": interval_end.isoformat(),
+                    "interval_start": interval_start.isoformat(),
+                    "event_count": 0
+                })
+        
+        # Sort by interval_start to have oldest first
+        event_counts.sort(key=lambda x: x['interval_start'])
+        logger.debug(f"Generated {len(event_counts)} event counts for city '{city_name}'")
+        return event_counts
 
 
 # Global instance
