@@ -41,28 +41,30 @@ export interface SimilaritySearchResponse {
 }
 
 // TODO: remove this when api supports attendace | placeholder
-function getDefaultAttendanceFromId(id: string): number {
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
-  }
-  const min = 50;
-  const max = 1000;
-  const range = max - min + 1;
-  const positive = Math.abs(hash);
-  return min + (positive % range);
-}
+// function getDefaultAttendanceFromId(id: string): number {
+//   let hash = 0;
+//   for (let i = 0; i < id.length; i++) {
+//     hash = ((hash << 5) - hash + id.charCodeAt(i)) | 0;
+//   }
+//   const min = 50;
+//   const max = 1000;
+//   const range = max - min + 1;
+//   const positive = Math.abs(hash);
+//   return min + (positive % range);
+// }
 
 export function mapBackendEventToEventPoint(backendEvent: BackendEvent): EventPoint {
   // TODO: change this line to just be attendance when API is ready
-  const attendance = typeof backendEvent.attendance === 'number' ? backendEvent.attendance : getDefaultAttendanceFromId(backendEvent.id);
+  const attendance = backendEvent.attendance
+  
+  // typeof backendEvent.attendance === 'number' ? backendEvent.attendance : getDefaultAttendanceFromId(backendEvent.id);
   return {
     id: backendEvent.id,
     title: backendEvent.title,
     lat: backendEvent.latitude || 0,
     lng: backendEvent.longitude || 0,
     description: backendEvent.description,
-    attendance,
+    attendance: attendance,
     start: backendEvent.start,
     end: backendEvent.end,
     category: normalizeCategorySlug(backendEvent.category) || '',

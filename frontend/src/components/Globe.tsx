@@ -134,8 +134,8 @@ export default function Globe({
 			<div style={{ position: "absolute", top: 12, right: panel ? 432 : 12, zIndex: 15 }}>
 				<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 					<SearchIcon 
-				onClick={search.openSearch} 
-				/>
+            onClick={search.openSearch} 
+          />
 					<FilterIcon 
 						active={filters.isActive}
 						onClick={() => setIsFilterOpen(true)}
