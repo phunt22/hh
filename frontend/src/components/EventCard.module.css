@@ -1,8 +1,8 @@
 .card {
   border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 8px;
+  border-radius: 8px 0 0 8px;
   padding: 12px 14px;
-  background: rgba(17, 17, 17, 0.96);
+  background: rgba(17, 17, 17, 0.98);
 }
 
 .title {
@@ -16,10 +16,13 @@
   margin-top: 4px;
 }
 
+.metaRow {
+  margin-top: 6px;
+}
+
 .meta {
   font-size: 13px;
   color: #bbb;
-  margin-top: 6px;
 }
 
 .description {
@@ -27,4 +30,63 @@
   font-size: 13px;
   line-height: 1.45;
   color: #e6e6e6;
+}
+
+.similarSection {
+  margin-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 10px;
+}
+
+.similarToggle {
+  background: none;
+  border: none;
+  color: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 500;
+}
+
+.similarToggle:hover {
+  color: #ccc;
+}
+
+.similarList {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.similarItem {
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 6px;
+  border-left: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.similarTitle {
+  font-size: 12px;
+  font-weight: 500;
+  color: #fff;
+}
+
+.similarMeta {
+  font-size: 11px;
+  color: #aaa;
+  margin-top: 2px;
+  display: flex;
+  gap: 8px;
+}
+
+.similarMore {
+  font-size: 11px;
+  color: #888;
+  text-align: center;
+  margin-top: 4px;
+  font-style: italic;
 }
