@@ -71,41 +71,43 @@ class PredictHQService:
         
         all_events = []
         offset = 0
-        limit = min(100, max_events)  # Batch size
-        
-        while len(all_events) < max_events:
+        limit = 100  # Batch size
+
+        logger.info(f"Starting paginated fetch of up to {max_events} events from PredictHQ with limit {limit} per page and filters: {filters}")
+        total_fetched = 0
+        for page in range((max_events // limit) + 1):
+            current_offset = page * limit
+            logger.debug(f"Fetching events: page={page}, offset={current_offset}, limit={limit}")
             try:
                 response = await self.fetch_events(
                     limit=limit,
-                    offset=offset,
+                    offset=current_offset,
                     **filters
                 )
                 
                 events = response.get("results", [])
+                logger.info(f"Fetched {len(events)} events at offset {current_offset}")
                 if not events:
+                    logger.info(f"No more events returned at offset {current_offset}. Stopping pagination.")
                     break
                 
                 all_events.extend(events)
+                total_fetched += len(events)
                 
                 # Check if there are more events
                 if len(events) < limit:
+                    logger.info(f"Received less than limit ({limit}) events at offset {current_offset}. Pagination complete.")
                     break
-                
-                offset += limit
-                
-                # Prevent infinite loops
-                if offset > 10000:  # Reasonable limit
-                    logger.warning("Reached offset limit, stopping pagination")
-                    break
-                
+
                 # Rate limiting - be nice to the API
                 await asyncio.sleep(0.1)
-                
+
             except Exception as e:
-                logger.error(f"Error in pagination at offset {offset}: {e}")
+                logger.error(f"Error in pagination at offset {current_offset}: {e}")
                 break
-        
-        return all_events[:max_events]
+
+        logger.info(f"Completed paginated fetch. Total events fetched: {total_fetched}")
+        return all_events
 
     def parse_event_data(self, raw_event: Dict[str, Any]) -> Dict[str, Any]:
         """Parse raw event data from PredictHQ into our format"""
