@@ -2,6 +2,7 @@ import './App.css'
 import Globe from './components/Globe'
 import { EventsAPI } from './services/api'
 import { DEFAULT_STYLE } from './constants/mapConstants'
+import { useQuery } from '@tanstack/react-query';
 
 function App() {
   const HYBRID = import.meta.env.VITE_MAPTILER_API_KEY
@@ -14,8 +15,16 @@ function App() {
     return rows;
   };
 
+  const { data: events } = useQuery({
+    queryKey: ["events"],
+    queryFn: async () => {
+      return EventsAPI.getEvents();
+    }
+  })
+
   return (
     <Globe
+      data={events ?? []}
       mapStyle={HYBRID}
       onViewportQuery={handleViewportQuery}
       startAtUserLocation
