@@ -1,7 +1,8 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, func
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 from app.core.database import get_session
 from app.models.event import Event
 from app.schemas.event import (
@@ -14,6 +15,8 @@ from app.schemas.event import (
 from app.services.similarity import similarity_service
 from app.services.embedding import embedding_service
 import logging
+from app.services.events_cache import events_cache_service
+from app.services.enhanced_similarity import enhanced_similarity_service
 
 logger = logging.getLogger(__name__)
 
@@ -30,22 +33,13 @@ async def get_events(
 ) -> List[EventResponse]:
     """Get events with optional filtering"""
     
-    query = select(Event)
-    
-    # Add filters
-    if category:
-        query = query.where(Event.category == category)
-    
-    if location_query:
-        query = query.where(Event.location.ilike(f"%{location_query}%"))
-    
-    # Add ordering and pagination
-    query = query.order_by(Event.start.desc()).offset(skip).limit(limit)
-    
-    result = await session.execute(query)
-    events = result.scalars().all()
-    
-    return [EventResponse.from_orm(event) for event in events]
+    return await events_cache_service.get_cached_events_with_fallback(
+        session=session,
+        skip=skip,
+        limit=limit,
+        category=category,
+        location_query=location_query
+    )
 
 
 @router.get("/{event_id}", response_model=EventResponse)
@@ -79,40 +73,50 @@ async def search_similar_events(
         )
     
     try:
+        # Force limit to 5 for similarity search
+        similarity_limit = 5
+        
         if request.event_id:
-            # Search by event ID
-            return await similarity_service.find_similar_events_by_id(
+            # Search by event ID using embeddings
+            similar_events_with_scores = await enhanced_similarity_service.find_similar_events_by_id(
                 session=session,
                 event_id=request.event_id,
-                limit=request.limit,
-                min_similarity=request.min_similarity,
-                include_related=request.include_related
-            )
-        else:
-            # Search by text query
-            similar_events_with_scores = await similarity_service.find_similar_events_by_text(
-                session=session,
-                query_text=request.query_text,
-                limit=request.limit,
+                limit=similarity_limit,
                 min_similarity=request.min_similarity
             )
             
-            # Convert to response format
-            from app.schemas.event import SimilarEvent
-            similar_events = [
-                SimilarEvent(
-                    event=EventResponse.from_orm(event),
-                    similarity_score=score,
-                    relationship_type="similar"
-                )
-                for event, score in similar_events_with_scores
-            ]
+            # Get the source event for response
+            source_event_query = select(Event).where(Event.id == request.event_id)
+            source_result = await session.execute(source_event_query)
+            source_event = source_result.scalar_one_or_none()
+            query_event = EventResponse.from_orm(source_event) if source_event else None
             
-            return SimilaritySearchResponse(
-                query_event=None,
-                similar_events=similar_events,
-                total_found=len(similar_events)
+        else:
+            # Search by text query using embeddings
+            similar_events_with_scores = await enhanced_similarity_service.find_similar_events_by_text(
+                session=session,
+                query_text=request.query_text,
+                limit=similarity_limit,
+                min_similarity=request.min_similarity
             )
+            query_event = None
+        
+        # Convert to response format
+        from app.schemas.event import SimilarEvent
+        similar_events = [
+            SimilarEvent(
+                event=EventResponse.from_orm(event),
+                similarity_score=score,
+                relationship_type="similar"
+            )
+            for event, score in similar_events_with_scores
+        ]
+        
+        return SimilaritySearchResponse(
+            query_event=query_event,
+            similar_events=similar_events,
+            total_found=len(similar_events)
+        )
     
     except Exception as e:
         logger.error(f"Error in similarity search: {e}")
@@ -130,17 +134,80 @@ async def get_similar_events(
     """Get events similar to a specific event"""
     
     try:
-        return await similarity_service.find_similar_events_by_id(
+        # Use enhanced similarity service with embeddings
+        similar_events_with_scores = await enhanced_similarity_service.find_similar_events_by_id(
             session=session,
             event_id=event_id,
-            limit=limit,
-            min_similarity=min_similarity,
-            include_related=include_related
+            limit=min(limit, 5),  # Force max 5 results
+            min_similarity=min_similarity
+        )
+        
+        # Get the source event
+        source_event_query = select(Event).where(Event.id == event_id)
+        source_result = await session.execute(source_event_query)
+        source_event = source_result.scalar_one_or_none()
+        
+        if not source_event:
+            raise HTTPException(status_code=404, detail="Event not found")
+        
+        # Convert to response format
+        from app.schemas.event import SimilarEvent
+        similar_events = [
+            SimilarEvent(
+                event=EventResponse.from_orm(event),
+                similarity_score=score,
+                relationship_type="similar"
+            )
+            for event, score in similar_events_with_scores
+        ]
+        
+        return SimilaritySearchResponse(
+            query_event=EventResponse.from_orm(source_event),
+            similar_events=similar_events,
+            total_found=len(similar_events)
         )
     
     except Exception as e:
         logger.error(f"Error finding similar events for {event_id}: {e}")
         raise HTTPException(status_code=500, detail="Error finding similar events")
+        
+
+@router.get("/popular/daily")
+async def get_popular_events_daily(
+    session: AsyncSession = Depends(get_session),
+    date: Optional[str] = Query(None, description="Date in YYYY-MM-DD format (defaults to today)")
+) -> Dict[str, Any]:
+    """Get top 10 most popular events for a specific day (cached for 1 hour)"""
+    
+    try:
+        # Parse date if provided
+        target_date = datetime.now(timezone.utc)
+        if date:
+            try:
+                target_date = datetime.strptime(date, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+        
+        # Get popular events (cached for 1 hour)
+        popular_events = await events_cache_service.get_popular_events_for_day(
+            session=session,
+            date=target_date
+        )
+        
+        return {
+            "date": target_date.strftime("%Y-%m-%d"),
+            "popular_events": popular_events,
+            "total_events": len(popular_events),
+            "cache_info": {
+                "cached": True,
+                "ttl_minutes": 60,
+                "description": "Results cached for 1 hour"
+            }
+        }
+        
+    except Exception as e:
+        logger.error(f"Error getting popular events: {e}")
+        raise HTTPException(status_code=500, detail="Error getting popular events")
 
 
 @router.get("/categories/list")
