@@ -1,242 +1,313 @@
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional, Dict, Any
+from sqlalchemy import select, func
+from typing import List, Optional
 from app.core.database import get_session
-from app.schemas.event import ETLStatus
-from app.utils.batch_processing import batch_processor
-from app.services.predicthq import predicthq_service
+from app.models.event import Event
+from app.schemas.event import (
+    EventResponse, 
+    SimilaritySearchRequest, 
+    SimilaritySearchResponse,
+    EventCreate,
+    EventUpdate
+)
 from app.services.similarity import similarity_service
+from app.services.embedding import embedding_service
 import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/etl", tags=["ETL"])
-
-# Store ETL status (in production, use Redis or database)
-etl_status_store: Dict[str, Dict[str, Any]] = {}
+router = APIRouter(prefix="/events", tags=["Events"])
 
 
-@router.post("/trigger", response_model=ETLStatus)
-async def trigger_etl(
-    background_tasks: BackgroundTasks,
+@router.get("/", response_model=List[EventResponse])
+async def get_events(
     session: AsyncSession = Depends(get_session),
-    max_events: int = Query(1000, description="Maximum number of events to fetch"),
+    skip: int = Query(0, ge=0, description="Number of events to skip"),
+    limit: int = Query(100, ge=1, le=1000, description="Number of events to return"),
     category: Optional[str] = Query(None, description="Filter by category"),
-    location: Optional[str] = Query(None, description="Filter by location"),
-    start_date: Optional[str] = Query(None, description="Filter by start date (ISO format)"),
-    end_date: Optional[str] = Query(None, description="Filter by end date (ISO format)"),
-    calculate_similarities: bool = Query(True, description="Calculate event similarities after ETL")
-) -> ETLStatus:
-    """Trigger ETL process to fetch and process events from PredictHQ"""
+    location_query: Optional[str] = Query(None, description="Search in location field")
+) -> List[EventResponse]:
+    """Get events with optional filtering"""
     
-    import uuid
-    job_id = str(uuid.uuid4())
+    query = select(Event)
     
-    # Initialize job status
-    etl_status_store[job_id] = {
-        "status": "running",
-        "message": "ETL process started",
-        "events_processed": 0,
-        "events_created": 0,
-        "events_updated": 0,
-        "processing_time": None,
-        "job_id": job_id
-    }
-    
-    # Prepare filters
-    filters = {}
+    # Add filters
     if category:
-        filters["category"] = category
-    if location:
-        filters["location"] = location
-    if start_date:
-        filters["start_date"] = start_date
-    if end_date:
-        filters["end_date"] = end_date
+        query = query.where(Event.category == category)
     
-    # Add background task
-    background_tasks.add_task(
-        run_etl_pipeline,
-        job_id,
-        max_events,
-        calculate_similarities,
-        filters
-    )
+    if location_query:
+        query = query.where(Event.location.ilike(f"%{location_query}%"))
     
-    return ETLStatus(
-        status="running",
-        message=f"ETL process started with job ID: {job_id}",
-        events_processed=0,
-        events_created=0,
-        events_updated=0
-    )
+    # Add ordering and pagination
+    query = query.order_by(Event.start.desc()).offset(skip).limit(limit)
+    
+    result = await session.execute(query)
+    events = result.scalars().all()
+    
+    return [EventResponse.from_orm(event) for event in events]
 
 
-@router.get("/status/{job_id}", response_model=ETLStatus)
-async def get_etl_status(job_id: str) -> ETLStatus:
-    """Get ETL job status"""
+@router.get("/{event_id}", response_model=EventResponse)
+async def get_event(
+    event_id: str,
+    session: AsyncSession = Depends(get_session)
+) -> EventResponse:
+    """Get a specific event by ID"""
     
-    if job_id not in etl_status_store:
-        raise HTTPException(status_code=404, detail="ETL job not found")
+    query = select(Event).where(Event.id == event_id)
+    result = await session.execute(query)
+    event = result.scalar_one_or_none()
     
-    job_status = etl_status_store[job_id]
-    return ETLStatus(**job_status)
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    return EventResponse.from_orm(event)
 
 
-@router.get("/test-connection")
-async def test_predicthq_connection():
-    """Test connection to PredictHQ API"""
+@router.post("/search/similar", response_model=SimilaritySearchResponse)
+async def search_similar_events(
+    request: SimilaritySearchRequest,
+    session: AsyncSession = Depends(get_session)
+) -> SimilaritySearchResponse:
+    """Search for similar events using text query or event ID"""
+    
+    if not request.query_text and not request.event_id:
+        raise HTTPException(
+            status_code=400, 
+            detail="Either query_text or event_id must be provided"
+        )
     
     try:
-        success = await predicthq_service.test_connection()
-        if success:
-            return {"status": "success", "message": "Connected to PredictHQ API successfully"}
+        if request.event_id:
+            # Search by event ID
+            return await similarity_service.find_similar_events_by_id(
+                session=session,
+                event_id=request.event_id,
+                limit=request.limit,
+                min_similarity=request.min_similarity,
+                include_related=request.include_related
+            )
         else:
-            return {"status": "error", "message": "Failed to connect to PredictHQ API"}
+            # Search by text query
+            similar_events_with_scores = await similarity_service.find_similar_events_by_text(
+                session=session,
+                query_text=request.query_text,
+                limit=request.limit,
+                min_similarity=request.min_similarity
+            )
+            
+            # Convert to response format
+            from app.schemas.event import SimilarEvent
+            similar_events = [
+                SimilarEvent(
+                    event=EventResponse.from_orm(event),
+                    similarity_score=score,
+                    relationship_type="similar"
+                )
+                for event, score in similar_events_with_scores
+            ]
+            
+            return SimilaritySearchResponse(
+                query_event=None,
+                similar_events=similar_events,
+                total_found=len(similar_events)
+            )
+    
     except Exception as e:
-        logger.error(f"PredictHQ connection test error: {e}")
-        raise HTTPException(status_code=500, detail=f"Connection test failed: {str(e)}")
+        logger.error(f"Error in similarity search: {e}")
+        raise HTTPException(status_code=500, detail="Error performing similarity search")
 
 
-@router.post("/calculate-similarities")
-async def calculate_similarities(
-    background_tasks: BackgroundTasks,
+@router.get("/{event_id}/similar", response_model=SimilaritySearchResponse)
+async def get_similar_events(
+    event_id: str,
     session: AsyncSession = Depends(get_session),
-    event_ids: Optional[list] = None,
-    batch_size: int = Query(100, description="Batch size for similarity calculations")
-):
-    """Calculate and store similarities between events"""
+    limit: int = Query(10, ge=1, le=100, description="Number of similar events to return"),
+    min_similarity: float = Query(0.7, ge=0.0, le=1.0, description="Minimum similarity score"),
+    include_related: bool = Query(True, description="Include explicitly related events")
+) -> SimilaritySearchResponse:
+    """Get events similar to a specific event"""
     
-    import uuid
-    job_id = str(uuid.uuid4())
+    try:
+        return await similarity_service.find_similar_events_by_id(
+            session=session,
+            event_id=event_id,
+            limit=limit,
+            min_similarity=min_similarity,
+            include_related=include_related
+        )
     
-    etl_status_store[job_id] = {
-        "status": "running",
-        "message": "Calculating event similarities",
-        "events_processed": 0,
-        "processing_time": None,
-        "job_id": job_id
-    }
+    except Exception as e:
+        logger.error(f"Error finding similar events for {event_id}: {e}")
+        raise HTTPException(status_code=500, detail="Error finding similar events")
+
+
+@router.get("/categories/list")
+async def get_categories(
+    session: AsyncSession = Depends(get_session)
+) -> List[str]:
+    """Get list of all event categories"""
     
-    background_tasks.add_task(
-        calculate_similarities_task,
-        job_id,
-        event_ids,
-        batch_size
+    query = select(Event.category).distinct().where(Event.category.is_not(None))
+    result = await session.execute(query)
+    categories = [row[0] for row in result.all() if row[0]]
+    
+    return sorted(categories)
+
+
+@router.get("/stats/summary")
+async def get_events_summary(
+    session: AsyncSession = Depends(get_session)
+) -> dict:
+    """Get summary statistics about events"""
+    
+    # Total events count
+    total_query = select(func.count(Event.id))
+    total_result = await session.execute(total_query)
+    total_events = total_result.scalar()
+    
+    # Events with embeddings count
+    embeddings_query = select(func.count(Event.id)).where(Event.embeddings.is_not(None))
+    embeddings_result = await session.execute(embeddings_query)
+    events_with_embeddings = embeddings_result.scalar()
+    
+    # Categories count
+    categories_query = select(func.count(func.distinct(Event.category)))
+    categories_result = await session.execute(categories_query)
+    unique_categories = categories_result.scalar()
+    
+    # Events by category
+    category_stats_query = (
+        select(Event.category, func.count(Event.id))
+        .group_by(Event.category)
+        .order_by(func.count(Event.id).desc())
+        .limit(10)
     )
+    category_stats_result = await session.execute(category_stats_query)
+    top_categories = [
+        {"category": category, "count": count}
+        for category, count in category_stats_result.all()
+    ]
     
     return {
-        "status": "running",
-        "message": f"Similarity calculation started with job ID: {job_id}",
-        "job_id": job_id
+        "total_events": total_events,
+        "events_with_embeddings": events_with_embeddings,
+        "unique_categories": unique_categories,
+        "top_categories": top_categories,
+        "embedding_coverage": round(events_with_embeddings / total_events * 100, 2) if total_events > 0 else 0
     }
 
 
-async def run_etl_pipeline(
-    job_id: str,
-    max_events: int,
-    calculate_similarities: bool,
-    filters: Dict[str, Any]
-):
-    """Background task to run the complete ETL pipeline"""
+@router.post("/", response_model=EventResponse)
+async def create_event(
+    event: EventCreate,
+    session: AsyncSession = Depends(get_session)
+) -> EventResponse:
+    """Create a new event (manual entry)"""
+    
+    # Check if event already exists
+    existing_query = select(Event).where(Event.id == event.id)
+    existing_result = await session.execute(existing_query)
+    
+    if existing_result.scalar_one_or_none():
+        raise HTTPException(status_code=400, detail="Event with this ID already exists")
     
     try:
-        from core.database import AsyncSessionLocal
+        # Generate embedding for the event
+        text = embedding_service.prepare_event_text(event.title, event.description or "")
+        embedding = await embedding_service.generate_embedding(text)
         
-        def update_status(stage: str, data: Dict[str, Any]):
-            """Update job status"""
-            etl_status_store[job_id].update({
-                "message": data.get("message", stage),
-                "events_processed": data.get("processed", 0),
-            })
+        # Create event
+        db_event = Event(
+            **event.dict(),
+            embeddings=embedding
+        )
         
-        # Run ETL process
-        async with AsyncSessionLocal() as session:
-            result = await batch_processor.fetch_and_process_events(
-                session=session,
-                max_events=max_events,
-                progress_callback=update_status,
-                **filters
-            )
-            
-            # Update final status
-            etl_status_store[job_id].update({
-                "status": result["status"],
-                "message": result["message"],
-                "events_processed": result["events_processed"],
-                "events_created": result["events_created"],
-                "events_updated": result["events_updated"],
-                "processing_time": result["processing_time"]
-            })
-            
-            # Calculate similarities if requested
-            '''
-            if calculate_similarities and result["status"] == "completed":
-                etl_status_store[job_id]["message"] = "Calculating event similarities..."
-                
-                # Get all event IDs
-                from sqlalchemy import select
-                from app.models.event import Event
-                
-                query = select(Event.id).where(Event.embeddings.is_not(None))
-                result = await session.execute(query)
-                event_ids = [row[0] for row in result.all()]
-                
-                if event_ids:
-                    similarities_count = await similarity_service.calculate_and_store_similarities(
-                        session, event_ids[:500]  # Limit for performance
-                    )
-                    etl_status_store[job_id]["message"] = f"ETL completed. Calculated {similarities_count} similarities."
-            '''
+        session.add(db_event)
+        await session.commit()
+        await session.refresh(db_event)
+        
+        return EventResponse.from_orm(db_event)
+    
     except Exception as e:
-        logger.error(f"ETL pipeline error for job {job_id}: {e}")
-        etl_status_store[job_id].update({
-            "status": "error",
-            "message": f"ETL failed: {str(e)}"
-        })
+        logger.error(f"Error creating event: {e}")
+        await session.rollback()
+        raise HTTPException(status_code=500, detail="Error creating event")
 
 
-async def calculate_similarities_task(
-    job_id: str,
-    event_ids: Optional[list],
-    batch_size: int
-):
-    """Background task to calculate similarities"""
+@router.put("/{event_id}", response_model=EventResponse)
+async def update_event(
+    event_id: str,
+    event_update: EventUpdate,
+    session: AsyncSession = Depends(get_session)
+) -> EventResponse:
+    """Update an existing event"""
+    
+    # Get existing event
+    query = select(Event).where(Event.id == event_id)
+    result = await session.execute(query)
+    db_event = result.scalar_one_or_none()
+    
+    if not db_event:
+        raise HTTPException(status_code=404, detail="Event not found")
     
     try:
-        from core.database import AsyncSessionLocal
-        from sqlalchemy import select
-        from app.models.event import Event
+        # Update fields
+        update_data = event_update.dict(exclude_unset=True)
         
-        async with AsyncSessionLocal() as session:
-            # Get event IDs if not provided
-            if not event_ids:
-                query = select(Event.id).where(Event.embeddings.is_not(None))
-                result = await session.execute(query)
-                event_ids = [row[0] for row in result.all()]
-            
-            if not event_ids:
-                etl_status_store[job_id].update({
-                    "status": "completed",
-                    "message": "No events with embeddings found",
-                    "events_processed": 0
-                })
-                return
-            
-            # Calculate similarities
-            similarities_count = await similarity_service.calculate_and_store_similarities(
-                session, event_ids, batch_size
+        # Check if title or description changed (need to regenerate embedding)
+        needs_embedding_update = (
+            'title' in update_data or 'description' in update_data
+        )
+        
+        for field, value in update_data.items():
+            setattr(db_event, field, value)
+        
+        # Regenerate embedding if needed
+        if needs_embedding_update:
+            text = embedding_service.prepare_event_text(
+                db_event.title, db_event.description or ""
             )
-            
-            etl_status_store[job_id].update({
-                "status": "completed",
-                "message": f"Calculated {similarities_count} similarities for {len(event_ids)} events",
-                "events_processed": len(event_ids)
-            })
+            db_event.embeddings = await embedding_service.generate_embedding(text)
+        
+        # Update timestamp
+        from datetime import datetime, timezone
+        db_event.updated_at = datetime.now(timezone.utc)
+        
+        await session.commit()
+        await session.refresh(db_event)
+        
+        return EventResponse.from_orm(db_event)
     
     except Exception as e:
-        logger.error(f"Similarity calculation error for job {job_id}: {e}")
-        etl_status_store[job_id].update({
-            "status": "error",
-            "message": f"Similarity calculation failed: {str(e)}"
-        })
+        logger.error(f"Error updating event {event_id}: {e}")
+        await session.rollback()
+        raise HTTPException(status_code=500, detail="Error updating event")
+
+
+@router.delete("/{event_id}")
+async def delete_event(
+    event_id: str,
+    session: AsyncSession = Depends(get_session)
+) -> dict:
+    """Delete an event"""
+    
+    # Get existing event
+    query = select(Event).where(Event.id == event_id)
+    result = await session.execute(query)
+    db_event = result.scalar_one_or_none()
+    
+    if not db_event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    try:
+        await session.delete(db_event)
+        await session.commit()
+        
+        return {"message": f"Event {event_id} deleted successfully"}
+    
+    except Exception as e:
+        logger.error(f"Error deleting event {event_id}: {e}")
+        await session.rollback()
+        raise HTTPException(status_code=500, detail="Error deleting event")
