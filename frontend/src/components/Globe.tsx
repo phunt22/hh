@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import maplibregl, { Map as MLMap, GeoJSONSource, type LngLatLike, type MapOptions } from "maplibre-gl";
+import maplibregl, { Map as MLMap, GeoJSONSource, type LngLatLike, type MapOptions, type PointLike } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import type { GlobeProps } from '../types';
+import type { GlobeProps, EventPoint } from '../types';
 import { zoomToRadiusKm, toFeatureCollection, debounce, findFirstSymbolLayerId } from '../utils/mapUtils';
 import { DEFAULT_STYLE, DEFAULT_VIEW, SAMPLE_EVENTS } from '../constants/mapConstants';
 import Toast from './Toast';
 import Controls from './Controls';
+import HoverModal, { type HoverInfo } from "./HoverModal";
+import EventListPanel from "./EventListPanel";
 
 export default function Globe({
   data,
@@ -22,6 +24,8 @@ export default function Globe({
   const mapRef = useRef<MLMap | null>(null);
   const [, setPointCount] = useState(0);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [hoverInfo, setHoverInfo] = useState<HoverInfo>(null);
+  const [panel, setPanel] = useState<{ locationLabel: string; events: EventPoint[] } | null>(null);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -53,14 +57,6 @@ export default function Globe({
     mapRef.current = map;
 
     map.on("load", () => {
-        // set projection (not functional rn)
-        // try {
-        //     // (map as any).setProjection({ name: "globe" });
-        // } catch { 
-        //     console.log("projection failed") 
-        // }
-
-      
       if (!map.getSource("events")) {
         map.addSource("events", {
           type: "geojson",
@@ -140,7 +136,7 @@ export default function Globe({
       // add a pin emoji symbol when zoomed in closely
       try {
         if (!(map as any).hasImage || !(map as any).hasImage("pin-emoji")) {
-          const size = 100;
+          const size = 90;
           const canvas = document.createElement("canvas");
           canvas.width = size;
           canvas.height = size;
@@ -179,6 +175,76 @@ export default function Globe({
       } catch (e) {
         // no-op if emoji image can't be created in this environment
       }
+
+      map.on("mouseenter", "events-pins", () => {
+        map.getCanvas().style.cursor = "pointer";
+      });
+      map.on("mouseleave", "events-pins", () => {
+        map.getCanvas().style.cursor = "";
+        setHoverInfo(null);
+      });
+      map.on("mousemove", "events-pins", (e: any) => {
+        const f = e?.features && e.features[0];
+        if (!f || !f.properties) {
+          setHoverInfo(null);
+          return;
+        }
+        const props = f.properties as any;
+        const popularityNum = typeof props.popularity === "number" ? props.popularity : Number(props.popularity);
+        setHoverInfo({
+          x: e.point?.x ?? 0,
+          y: e.point?.y ?? 0,
+          properties: {
+            id: String(props.id ?? ""),
+            title: String(props.title ?? "Event"),
+            description: props.description || "",
+            time: props.time || "",
+            category: props.category || "",
+            popularity: Number.isFinite(popularityNum) ? popularityNum : undefined
+          }
+        });
+      });
+
+      
+      // CHECK for overlapping events at location, open the panel with location up top
+      map.on("click", "events-pins", (e: any) => {
+        const r = 6; // px radius for overlap detection
+        const bbox: [PointLike, PointLike] = [
+          [Math.max(0, e.point.x - r), Math.max(0, e.point.y - r)],
+          [e.point.x + r, e.point.y + r]
+        ];
+        const feats = map.queryRenderedFeatures(bbox, { layers: ["events-pins"] }) as any[];
+        if (!feats || feats.length === 0) return;
+
+        // pick location label from the first feature if present
+        const firstProps = (feats[0]?.properties ?? {}) as any;
+        const coords = (feats[0]?.geometry?.coordinates ?? []) as [number, number];
+        const fallbackLabel = Array.isArray(coords) && coords.length >= 2 ? `${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}` : "Selected location";
+        const locationLabel = String(firstProps.location || firstProps.title || fallbackLabel);
+
+        // collect events from all overlapping features
+        const events: EventPoint[] = feats.map((f: any) => {
+          const p = f.properties || {};
+          const c = f.geometry?.coordinates || [];
+          const lon = Array.isArray(c) ? Number(c[0]) : NaN;
+          const lat = Array.isArray(c) ? Number(c[1]) : NaN;
+          const popNum = typeof p.popularity === "number" ? p.popularity : Number(p.popularity);
+          return {
+            id: String(p.id ?? Math.random().toString(36).slice(2)),
+            title: String(p.title ?? "Event"),
+            lat: Number.isFinite(lat) ? lat : 0,
+            lng: Number.isFinite(lon) ? lon : 0,
+            description: p.description || "",
+            time: p.time || "",
+            category: p.category || "",
+            location: p.location || locationLabel,
+            popularity: Number.isFinite(popNum) ? popNum : undefined
+          } as EventPoint;
+        });
+
+        setHoverInfo(null);
+        setPanel({ locationLabel, events });
+      });
 
       setPointCount((initialData.features ?? []).length);
 
@@ -300,6 +366,16 @@ export default function Globe({
       
       {showControls && (
         <Controls onZoomIn={() => doZoom(2)} onZoomOut={() => doZoom(0.5)} onReset={reset} />
+      )}
+
+      <HoverModal info={hoverInfo} />
+
+      {panel && (
+        <EventListPanel
+          locationLabel={panel.locationLabel}
+          events={panel.events}
+          onClose={() => setPanel(null)}
+        />
       )}
     </div>
   );
