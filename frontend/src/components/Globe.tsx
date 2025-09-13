@@ -97,7 +97,6 @@ export default function Globe({
   };
 
   const handleSearchExecute = async (query: string) => {
-    console.log('executing search')
     const result = await search.executeSearch(query);
     if (result.success) {
       const results = (result as any).results as EventPoint[];
@@ -120,7 +119,7 @@ export default function Globe({
     const map = mapRef.current;
     if (!map) return;
     if (Number.isFinite(e.lng) && Number.isFinite(e.lat)) {
-      map.easeTo({ center: [e.lng, e.lat], zoom: Math.max(13, map.getZoom()), duration: 500 });
+      map.easeTo({ center: [e.lng, e.lat], zoom: Math.max(10, map.getZoom()), duration: 900 });
     }
   };
 
