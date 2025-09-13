@@ -6,9 +6,11 @@ export type EventListPanelProps = {
   locationLabel: string;
   events: EventPoint[];
   onClose: () => void;
+  onEventClick?: (e: EventPoint) => void;
+  isSearchResults: boolean;
 };
 
-export default function EventListPanel({ locationLabel, events, onClose }: EventListPanelProps) {
+export default function EventListPanel({ locationLabel, events, onClose, onEventClick, isSearchResults }: EventListPanelProps) {
   return (
     <div
       className={styles.panel}
@@ -19,12 +21,19 @@ export default function EventListPanel({ locationLabel, events, onClose }: Event
         <div className={styles.headerTitle}>
           {locationLabel || "Location"}
         </div>
-        <button onClick={onClose} aria-label="Close" className={styles.closeBtn}>✕</button>
+        <button 
+          onClick={onClose} 
+          aria-label="Close" 
+          className={`${styles.closeBtn} ${isSearchResults ? styles.closeBtnDanger : ""}`}
+          title={isSearchResults ? "Clear search results" : "Close"}
+        >✕</button>
       </div>
       <div className={styles.listWrapper}>
         <div className={styles.list}>
           {events.map((e) => (
-            <EventCard key={e.id} event={e} />
+            <div key={e.id} onClick={() => onEventClick?.(e)}>
+              <EventCard event={e} onClick={() => onEventClick?.(e)} />
+            </div>
           ))}
           {events.length === 0 && (
             <div className={styles.empty}>No events at this location.</div>

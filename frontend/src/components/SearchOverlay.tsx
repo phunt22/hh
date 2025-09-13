@@ -4,7 +4,7 @@ import styles from "./SearchOverlay.module.css";
 type SearchOverlayProps = {
   isOpen: boolean;
   onClose: () => void;
-  onSearch: (query: string) => void;
+  onSearch: (query: string) => Promise<void>;
 };
 
 export default function SearchOverlay({ isOpen, onClose, onSearch }: SearchOverlayProps) {
@@ -46,7 +46,7 @@ export default function SearchOverlay({ isOpen, onClose, onSearch }: SearchOverl
     if (query.trim() && !isLoading) {
       setIsLoading(true);
       try {
-        onSearch(query.trim());
+        await onSearch(query.trim());
       } finally {
         setIsLoading(false);
       }
@@ -105,7 +105,7 @@ export default function SearchOverlay({ isOpen, onClose, onSearch }: SearchOverl
                     ry="18" 
                     fill="none" 
                     stroke="rgba(255,255,255,1)" 
-                    strokeWidth="6" 
+                    strokeWidth="4" 
                     strokeLinecap="round"
                     pathLength={1000}
                     className={styles.borderPath}

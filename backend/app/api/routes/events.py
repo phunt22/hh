@@ -198,7 +198,7 @@ async def get_popular_events_daily(
             session=session,
             date=target_date
         )
-        
+
         return {
             "date": target_date.strftime("%Y-%m-%d"),
             "popular_events": popular_events,
@@ -224,6 +224,8 @@ async def get_categories(
     query = select(Event.category).distinct().where(Event.category.is_not(None))
     result = await session.execute(query)
     categories = [row[0] for row in result.all() if row[0]]
+
+    # TODO colormap here
     
     return sorted(categories)
 

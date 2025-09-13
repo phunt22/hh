@@ -32,7 +32,7 @@ export default function Globe({
 }: GlobeProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [hoverInfo, setHoverInfo] = useState<HoverInfo>(null);
-  const [panel, setPanel] = useState<{ locationLabel: string; events: any[] } | null>(null);
+  const [panel, setPanel] = useState<{ locationLabel: string; events: EventPoint[]; isSearch?: boolean } | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const initialData = useMemo(
@@ -44,6 +44,8 @@ export default function Globe({
   const filters = useFilters();
   const { categories } = useCategories();
   
+  const displayedData: EventPoint[] = search.isSearchActive ? (search.searchResults ?? []) : (data ?? []);
+
   const { containerRef, mapRef } = useMapInstance({
     mapStyle,
     initialView,
@@ -52,35 +54,73 @@ export default function Globe({
     onToast: setToastMessage,
     onHoverChange: setHoverInfo,
     onPanelChange: setPanel,
-    data
+    data: displayedData
   });
 
-  // Apply map layer filtering by selected categories
-  useMapCategoryFilter(mapRef.current, filters.selectedCategories);
+  // Apply map layer filtering by selected categories, but override while searching
+  useMapCategoryFilter(mapRef.current, search.isSearchActive ? [] : filters.selectedCategories);
 
-	useMapViewport({
+  useMapViewport({
     map: mapRef.current,
-    onViewportQuery,
+    onViewportQuery: search.isSearchActive ? undefined : onViewportQuery,
     fetchDebounceMs,
     maxClientPoints,
-    data
-	});
+    data: displayedData
+  });
 
 	const { doZoom, reset } = useMapControls(mapRef.current, initialView);
+
+  const fitMapToResults = (results: EventPoint[]) => {
+    const map = mapRef.current;
+    if (!map || !results || results.length === 0) return;
+    const valid = results.filter(r => Number.isFinite(r.lat) && Number.isFinite(r.lng) && !(r.lat === 0 && r.lng === 0));
+    if (valid.length === 0) return;
+
+    if (valid.length === 1) {
+      const one = valid[0];
+      map.easeTo({ center: [one.lng, one.lat], zoom: Math.max(12, map.getZoom()), duration: 900 });
+      return;
+    }
+
+    let minLng = Infinity, minLat = Infinity, maxLng = -Infinity, maxLat = -Infinity;
+    for (const r of valid) {
+      if (r.lng < minLng) minLng = r.lng;
+      if (r.lng > maxLng) maxLng = r.lng;
+      if (r.lat < minLat) minLat = r.lat;
+      if (r.lat > maxLat) maxLat = r.lat;
+    }
+    try {
+      map.fitBounds([[minLng, minLat], [maxLng, maxLat]] as any, { padding: 80, duration: 900 });
+    } catch {
+      // ignore
+    }
+  };
 
   const handleSearchExecute = async (query: string) => {
     const result = await search.executeSearch(query);
     if (result.success) {
-      // open panel to show results
       const results = (result as any).results as EventPoint[];
-      const filtered = filters.isActive
-        ? results.filter((e) => e.category && filters.selectedCategories.includes(e.category))
-        : results;
-      setPanel({ locationLabel: `Results for "${query}"`, events: filtered });
+      if (!results || results.length === 0) {
+        setToastMessage(`No results for "${query}"`);
+        search.closeSearch();
+        return;
+      }
+      setPanel({ locationLabel: `Results for "${query}"`, events: results, isSearch: true });
+      fitMapToResults(results);
     } else {
-      setToastMessage('Search failed');
+      const msg = (result as any).error || 'Search failed';
+      setToastMessage(msg);
     }
     search.closeSearch();
+  };
+
+  // move the user to the event
+  const handleEventClick = (e: EventPoint) => {
+    const map = mapRef.current;
+    if (!map) return;
+    if (Number.isFinite(e.lng) && Number.isFinite(e.lat)) {
+      map.easeTo({ center: [e.lng, e.lat], zoom: Math.max(10, map.getZoom()), duration: 900 });
+    }
   };
 
 	return (
@@ -91,7 +131,6 @@ export default function Globe({
 				<Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
 			)}
 
-			{/* Search + Filter icons stack (top-right) */}
 			<div style={{ position: "absolute", top: 12, right: panel ? 432 : 12, zIndex: 15 }}>
 				<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 					<SearchIcon 
@@ -114,7 +153,14 @@ export default function Globe({
         <EventListPanel
           locationLabel={panel.locationLabel}
           events={panel.events}
-          onClose={() => setPanel(null)}
+          isSearchResults={panel.isSearch === true}
+          onEventClick={handleEventClick}
+          onClose={() => {
+            if (panel?.isSearch) {
+              search.clearSearch();
+            }
+            setPanel(null);
+          }}
         />
       )}
 

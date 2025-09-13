@@ -5,6 +5,10 @@
   background: rgba(17, 17, 17, 0.98);
 }
 
+.clickable {
+  cursor: pointer;
+}
+
 .title {
   font-weight: 600;
   font-size: 15px;

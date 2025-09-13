@@ -28,7 +28,7 @@ export function useMapInstance({
 	const containerRef = useRef<HTMLDivElement | null>(null);
 	const mapRef = useRef<MLMap | null>(null);
 
-	// Create map instance
+	// Create map instance (only once on mount)
 	useEffect(() => {
 		if (!containerRef.current || mapRef.current) return;
 
@@ -69,7 +69,7 @@ export function useMapInstance({
 			map.remove();
 			mapRef.current = null;
 		};
-	}, [mapStyle, initialView, initialData, startAtUserLocation, onToast, onHoverChange, onPanelChange, data]);
+	}, []);
 
 	return { containerRef, mapRef };
 }
