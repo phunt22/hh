@@ -5,13 +5,24 @@ import styles from "./EventCard.module.css";
 export default function EventCard({ event }: { event: EventPoint }) {
   const [showSimilar, setShowSimilar] = useState(false);
   
-  const formatDate = (timeStr?: string) => {
-    if (!timeStr) return null;
+  // i.e. "performing-arts" -> "Performing Arts"
+  const prettifyCategory = (value?: string | null) => {
+    if (!value) return "";
+    return value
+      .replace(/[-_]+/g, " ")
+      .trim()
+      .split(/\s+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  const formatDate = (iso?: string) => {
+    if (!iso) return null;
     try {
-      const date = new Date(timeStr);
-      return date.toLocaleDateString() + " at " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const date = new Date(iso);
+      return date.toLocaleDateString() 
     } catch {
-      return timeStr;
+      return iso;
     }
   };
 
@@ -25,17 +36,24 @@ export default function EventCard({ event }: { event: EventPoint }) {
     <div className={styles.card}>
       <div className={styles.title}>{event.title}</div>
       
-      {(event.category || event.time) && (
+      {(event.category || event.start || event.end) && (
         <div className={styles.subtitle}>
-          {event.category ? event.category : null}
-          {event.category && event.time ? " • " : null}
-          {event.time ? formatDate(event.time) : null}
+          {event.category && prettifyCategory(event.category)}
+          {event.category && (event.start || event.end) ? " • " : null}
+          {event.start && event.end
+            ? (() => {
+                const sd = new Date(event.start);
+                const ed = new Date(event.end);
+                const isMulti = sd.getFullYear() !== ed.getFullYear() || sd.getMonth() !== ed.getMonth() || sd.getDate() !== ed.getDate();
+                return isMulti ? `${formatDate(event.start)} – ${formatDate(event.end)}` : formatDate(event.start);
+              })()
+            : (event.start ? formatDate(event.start) : null)}
         </div>
       )}
       
-      {event.expectedAttendees && (
+      {event.attendance && (
         <div className={styles.metaRow}>
-          <span className={styles.meta}>{formatAttendees(event.expectedAttendees)}</span>
+          <span className={styles.meta}>{formatAttendees(event.attendance)}</span>
         </div>
       )}
       
@@ -59,8 +77,15 @@ export default function EventCard({ event }: { event: EventPoint }) {
                 <div key={similar.id} className={styles.similarItem}>
                   <div className={styles.similarTitle}>{similar.title}</div>
                   <div className={styles.similarMeta}>
-                    {similar.category && <span>{similar.category}</span>}
-                    {similar.time && <span>{formatDate(similar.time)}</span>}
+                    {similar.category && <span>{prettifyCategory(similar.category)}</span>}
+                    {similar.start && similar.end && (
+                      <span>{(() => {
+                        const sd = new Date(similar.start!);
+                        const ed = new Date(similar.end!);
+                        const isMulti = sd.getFullYear() !== ed.getFullYear() || sd.getMonth() !== ed.getMonth() || sd.getDate() !== ed.getDate();
+                        return isMulti ? `${formatDate(similar.start)} – ${formatDate(similar.end)}` : formatDate(similar.start);
+                      })()}</span>
+                    )}
                   </div>
                 </div>
               ))}

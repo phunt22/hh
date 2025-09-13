@@ -7,9 +7,10 @@ export type HoverInfo = {
     id: string;
     title: string;
     description?: string;
-    time?: string;
+    start?: string;
+    end?: string;
     category?: string;
-    expectedAttendees?: number;
+    attendance?: number;
   };
 } | null;
 
@@ -17,7 +18,29 @@ export default function HoverModal({ info }: { info: HoverInfo }) {
   if (!info) return null;
 
   const { x, y, properties } = info;
-  const { title, description, time, category, expectedAttendees } = properties;
+  const { title, description, start, end, category, attendance } = properties;
+
+  const prettifyCategory = (value?: string | null) => {
+    if (!value) return "";
+    return value
+      .replace(/[-_]+/g, " ")
+      .trim()
+      .split(/\s+/)
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  const formatDateOrRange = (s?: string, e?: string) => {
+    if (s && e) {
+      const sd = new Date(s);
+      const ed = new Date(e);
+      const isMulti = sd.getFullYear() !== ed.getFullYear() || sd.getMonth() !== ed.getMonth() || sd.getDate() !== ed.getDate();
+      return isMulti ? `${sd.toLocaleDateString()} – ${ed.toLocaleDateString()}` : sd.toLocaleDateString();
+    }
+    if (s) return new Date(s).toLocaleDateString();
+    if (e) return new Date(e).toLocaleDateString();
+    return null;
+  };
 
   return (
     <div
@@ -27,16 +50,16 @@ export default function HoverModal({ info }: { info: HoverInfo }) {
       onTouchMoveCapture={(e) => e.stopPropagation()}
     >
       <div className={styles.title}>{title || "Event"}</div>
-      {(category || time) && (
+      {(category || start || end) && (
         <div className={styles.subtitle}>
-          {category ? category : null}
-          {category && time ? " • " : null}
-          {time ? new Date(time).toLocaleString() : null}
+          {category ? prettifyCategory(category) : null}
+          {category && (start || end) ? " • " : null}
+          {formatDateOrRange(start, end)}
         </div>
       )}
-      {typeof expectedAttendees === "number" && !Number.isNaN(expectedAttendees) && (
+      {typeof attendance === "number" && !Number.isNaN(attendance) && (
         <div className={styles.meta}>
-          {expectedAttendees >= 1000 ? `${Math.round(expectedAttendees / 1000)}K expected` : `${expectedAttendees} expected`}
+          {attendance >= 1000 ? `${Math.round(attendance / 1000)}K expected` : `${attendance} expected`}
         </div>
       )}
       {description && (

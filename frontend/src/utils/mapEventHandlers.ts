@@ -1,6 +1,5 @@
 import type { Map as MLMap, PointLike } from "maplibre-gl";
 import type { EventPoint } from '../types';
-import { SAMPLE_EVENTS } from '../constants/mapConstants';
 
 export function setupMapEventHandlers(
 	map: MLMap,
@@ -25,7 +24,7 @@ export function setupMapEventHandlers(
 		}
 		
 		const props = f.properties as any;
-		const attendeesNum = typeof props.expectedAttendees === "number" ? props.expectedAttendees : Number(props.expectedAttendees);
+		const attendeesNum = (typeof props.attendance === "number" ? props.attendance : Number(props.attendance));
 		
 		onHoverChange({
 			x: e.point?.x ?? 0,
@@ -34,9 +33,10 @@ export function setupMapEventHandlers(
 				id: String(props.id ?? ""),
 				title: String(props.title ?? "Event"),
 				description: props.description || "",
-				time: props.time || "",
+				start: props.start || "",
+				end: props.end || "",
 				category: props.category || "",
-				expectedAttendees: Number.isFinite(attendeesNum) ? attendeesNum : undefined
+				attendance: Number.isFinite(attendeesNum) ? attendeesNum : undefined
 			}
 		});
 	});
@@ -48,26 +48,31 @@ export function setupMapEventHandlers(
         [e.point.x + r, e.point.y + r]
         ];
     
-    const feats = map.queryRenderedFeatures(bbox, { layers: ["events-pins"] }) as any[];
-    if (!feats || feats.length === 0) return;
+		const feats = map.queryRenderedFeatures(bbox, { layers: ["events-pins"] }) as any[];
+		if (!feats || feats.length === 0) return;
 
-		// Get location label from first feature
-		const firstProps = (feats[0]?.properties ?? {}) as any;
-		const coords = (feats[0]?.geometry?.coordinates ?? []) as [number, number];
-		const fallbackLabel = Array.isArray(coords) && coords.length >= 2 ? 
-			`${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}` : "Selected location";
-		const locationLabel = String(firstProps.location || firstProps.title || fallbackLabel);
+		// const coords = (feats[0]?.geometry?.coordinates ?? []) as [number, number];
+		// const fallbackLabel = Array.isArray(coords) && coords.length >= 2 ?
+		// 	`${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}` : "Selected location";
+		const fallbackLabel = String(feats[0]?.properties?.title || "Selected Events");
 
-            // collect events overlapping locations		
-            const events: EventPoint[] = feats.map((f: any) => {
+		
+		const withLocation = feats.find((ff: any) => {
+			const loc = (ff?.properties ?? {}).location;
+			return typeof loc === 'string' && loc.trim().length > 0;
+		});
+		const locationLabel = String((withLocation?.properties?.location as any) || fallbackLabel);
+
+		// collect events overlapping locations		
+		const events: EventPoint[] = feats.map((f: any) => {
 			const p = f.properties || {};
 			const c = f.geometry?.coordinates || [];
 			const lon = Array.isArray(c) ? Number(c[0]) : NaN;
 			const lat = Array.isArray(c) ? Number(c[1]) : NaN;
-			const attendeesNum = typeof p.expectedAttendees === "number" ? p.expectedAttendees : Number(p.expectedAttendees);
+			const attendeesNum = typeof (p as any).attendance === "number" ? (p as any).attendance : Number((p as any).attendance);
 			
-			// Find original event to restore similarEvents
-			const originalEvent = (data ?? SAMPLE_EVENTS).find(e => e.id === p.id);
+			// find original event to restore similarEvents (only from provided data)
+			const originalEvent = (data ?? []).find(e => e.id === p.id);
 			
 			return {
 				id: String(p.id ?? Math.random().toString(36).slice(2)),
@@ -75,10 +80,11 @@ export function setupMapEventHandlers(
 				lat: Number.isFinite(lat) ? lat : 0,
 				lng: Number.isFinite(lon) ? lon : 0,
 				description: p.description || "",
-				time: p.time || "",
+				start: (p as any).start || undefined,
+				end: (p as any).end || undefined,
 				category: p.category || "",
 				location: p.location || locationLabel,
-				expectedAttendees: Number.isFinite(attendeesNum) ? attendeesNum : undefined,
+				attendance: Number.isFinite(attendeesNum) ? attendeesNum : undefined,
 				similarEvents: originalEvent?.similarEvents || undefined
 			} as EventPoint;
 		});
