@@ -18,6 +18,7 @@ function App() {
     <Globe
       mapStyle={HYBRID}
       onViewportQuery={handleViewportQuery}
+      startAtUserLocation
     />
   )
 }

@@ -1,17 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import maplibregl, { Map as MLMap, GeoJSONSource, type LngLatLike, type MapOptions } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-
-import type { EventPoint, GlobeProps } from '../types';
+import type { GlobeProps } from '../types';
 import { zoomToRadiusKm, toFeatureCollection, debounce, findFirstSymbolLayerId } from '../utils/mapUtils';
-import { DEFAULT_STYLE, DEFAULT_VIEW, SAMPLE_EVENTS, CONTROL_BUTTON_STYLES } from '../constants/mapConstants';
+import { DEFAULT_STYLE, DEFAULT_VIEW, SAMPLE_EVENTS } from '../constants/mapConstants';
+import Toast from './Toast';
+import Controls from './Controls';
 
-// Re-export EventPoint for backward compatibility
-export type { EventPoint };
-
-// -----------------------------
-// Component
-// -----------------------------
 export default function Globe({
   data,
   onViewportQuery,
@@ -20,11 +15,17 @@ export default function Globe({
   maxClientPoints = 40000,
   fetchDebounceMs = 220,
   showControls = false,
-  style
+  style,
+  startAtUserLocation = false
 }: GlobeProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<MLMap | null>(null);
   const [, setPointCount] = useState(0);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  const showToast = (message: string) => {
+    setToastMessage(message);
+  };
 
   const initialData = useMemo(
     () => toFeatureCollection((data ?? SAMPLE_EVENTS).slice(0, maxClientPoints)),
@@ -42,6 +43,7 @@ export default function Globe({
       zoom: initialView.zoom,
       bearing: initialView.bearing ?? 0,
       pitch: initialView.pitch ?? 0,
+      fadeDuration: 0,
       attributionControl: { compact: false },
       interactive: true,
       cooperativeGestures: false // no cmd to scroll
@@ -158,6 +160,52 @@ export default function Globe({
       }
 
       setPointCount((initialData.features ?? []).length);
+
+      if (startAtUserLocation) {
+        if (navigator.geolocation) {
+          let resolved = false;
+          const onSuccess = (pos: GeolocationPosition) => {
+            if (resolved) return;
+            resolved = true;
+            const { latitude, longitude } = pos.coords;
+            map.jumpTo({ center: [longitude, latitude], zoom: Math.max(10, initialView.zoom) });
+          };
+          const onFinalError = (err: GeolocationPositionError) => {
+            if (resolved) return;
+            resolved = true;
+            const code = (err && (err as any).code) ?? 0;
+            if (code === 1) {
+              showToast("Location permission denied. Using default view.");
+            } else if (code === 3) {
+              showToast("Location timed out. Using default view.");
+            } else {
+              showToast("Couldn't access location. Using default view.");
+            }
+          };
+          const tryCoarse = () => {
+            if (resolved) return;
+            navigator.geolocation.getCurrentPosition(
+              onSuccess,
+              onFinalError,
+              { enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
+            );
+          };
+          navigator.geolocation.getCurrentPosition(
+            onSuccess,
+            (err) => {
+              const code = (err && (err as any).code) ?? 0;
+              if (code === 1) {
+                onFinalError(err);
+              } else {
+                tryCoarse();
+              }
+            },
+            { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
+          );
+        } else {
+          showToast("Geolocation not supported in this browser.");
+        }
+      }
     });
 
     // debounced fetch on move end
@@ -192,7 +240,9 @@ export default function Globe({
       map.remove();
       mapRef.current = null;
     };
-  }, [mapStyle, initialView.lon, initialView.lat, initialView.zoom, initialView.bearing, initialView.pitch, onViewportQuery, fetchDebounceMs, maxClientPoints, initialData]);
+  }, [mapStyle, initialView.lon, initialView.lat, initialView.zoom, initialView.bearing, initialView.pitch, onViewportQuery, fetchDebounceMs, maxClientPoints, initialData, startAtUserLocation]);
+
+  // no timer cleanup needed; Toast handles its own lifecycle
 
   // update source if data prop changes
   useEffect(() => {
@@ -222,13 +272,13 @@ export default function Globe({
   return (
     <div style={{ position: "relative", width: "100vw", height: "100vh", ...style }}>
       <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
+
+      {toastMessage && (
+        <Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
+      )}
       
       {showControls && (
-        <div style={{ position: "absolute", right: 12, bottom: 12, display: "flex", gap: 8 }}>
-          <button onClick={() => doZoom(2)} style={CONTROL_BUTTON_STYLES}>+</button>
-          <button onClick={() => doZoom(0.5)}   style={CONTROL_BUTTON_STYLES}>−</button>
-          <button onClick={reset}             style={CONTROL_BUTTON_STYLES}>Reset</button>
-        </div>
+        <Controls onZoomIn={() => doZoom(2)} onZoomOut={() => doZoom(0.5)} onReset={reset} />
       )}
     </div>
   );
