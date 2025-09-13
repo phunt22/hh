@@ -15,11 +15,11 @@ function setupHeatmapLayer(map: MLMap) {
 				source: "events",
 				maxzoom: 18,
 				paint: {
-					// weight: use expectedAttendees (0..5000 -> 0..1)
+					// weight: use attendace (0..5000 -> 0..1)
 					"heatmap-weight": [
 						"interpolate",
 						["linear"],
-						["coalesce", ["to-number", ["get", "expectedAttendees"]], 0],
+						["coalesce", ["to-number", ["get", "attendance"]], 0],
 						0, 0,
 						5000, 1
 					],
@@ -99,7 +99,7 @@ function setupPinLayer(map: MLMap) {
 				id: "events-pins",
 				type: "symbol",
 				source: "events",
-				minzoom: 12,
+				minzoom: 4,
 				layout: {
 					"icon-image": "pin-emoji",
 					"icon-size": [

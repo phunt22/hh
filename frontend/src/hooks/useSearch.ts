@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { EventPoint } from '../types';
+import { EventsAPI, type SimilaritySearchResponse, mapBackendEventToEventPoint } from '../services/api';
 
 export function useSearch() {
 	const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -14,16 +15,22 @@ export function useSearch() {
         setIsSearchOpen(false);
     };
 
+    // TODO: placeholderish method
     const executeSearch = async (query: string) => {
-        // TODO: Implement actual search API call
-        console.log("Searching for:", query);
-        
-        // const results = await searchAPI.search(query);
-        // setSearchResults(results);
-        // setIsSearchActive(true);
-        
-        // TODO: remove placeholder toast
-        return { success: true, message: `Search functionality will be implemented here for: "${query}"` };
+        try {
+            const res: SimilaritySearchResponse = await EventsAPI.searchSimilarEvents({
+                query_text: query,
+                limit: 25, // TODO probably too high?
+                min_similarity: 0.6 // TODO tune this
+            });
+            const results: EventPoint[] = res.similar_events.map(se => mapBackendEventToEventPoint(se.event as any));
+            setSearchResults(results);
+            setIsSearchActive(true);
+            return { success: true, results } as const;
+        } catch (err: any) {
+            console.warn('Search failed', err);
+            return { success: false, error: err?.message || 'Search failed' } as const;
+        }
     };
 
 	const clearSearch = () => {
