@@ -13,6 +13,11 @@ import HoverModal, { type HoverInfo } from "./HoverModal";
 import EventListPanel from "./EventListPanel";
 import SearchIcon from './SearchIcon';
 import SearchOverlay from './SearchOverlay';
+import FilterIcon from './FilterIcon';
+import FilterOverlay from './FilterOverlay';
+import { useFilters } from '../hooks/useFilters';
+import { useMapCategoryFilter } from '../hooks/useMapCategoryFilter';
+import { useCategories } from '../hooks/useCategories';
 
 export default function Globe({
   data,
@@ -28,6 +33,7 @@ export default function Globe({
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [hoverInfo, setHoverInfo] = useState<HoverInfo>(null);
   const [panel, setPanel] = useState<{ locationLabel: string; events: any[] } | null>(null);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const initialData = useMemo(
     () => toFeatureCollection((data ?? []).slice(0, maxClientPoints)),
@@ -35,6 +41,8 @@ export default function Globe({
   );
 
   const search = useSearch();
+  const filters = useFilters();
+  const { categories } = useCategories();
   
   const { containerRef, mapRef } = useMapInstance({
     mapStyle,
@@ -46,6 +54,9 @@ export default function Globe({
     onPanelChange: setPanel,
     data
   });
+
+  // Apply map layer filtering by selected categories
+  useMapCategoryFilter(mapRef.current, filters.selectedCategories);
 
 	useMapViewport({
     map: mapRef.current,
@@ -62,7 +73,10 @@ export default function Globe({
     if (result.success) {
       // open panel to show results
       const results = (result as any).results as EventPoint[];
-      setPanel({ locationLabel: `Results for "${query}"`, events: results });
+      const filtered = filters.isActive
+        ? results.filter((e) => e.category && filters.selectedCategories.includes(e.category))
+        : results;
+      setPanel({ locationLabel: `Results for "${query}"`, events: filtered });
     } else {
       setToastMessage('Search failed');
     }
@@ -77,16 +91,18 @@ export default function Globe({
 				<Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
 			)}
 
-			{/* Search icon */}
-			<SearchIcon 
+			{/* Search + Filter icons stack (top-right) */}
+			<div style={{ position: "absolute", top: 12, right: panel ? 432 : 12, zIndex: 15 }}>
+				<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+					<SearchIcon 
 				onClick={search.openSearch} 
-				style={{ 
-					position: "absolute", 
-					top: 12, 
-					right: panel ? 432 : 12, // Inside sidebar when panel is open
-					zIndex: 15
-				}} 
-			/>
+				/>
+					<FilterIcon 
+						active={filters.isActive}
+						onClick={() => setIsFilterOpen(true)}
+					/>
+				</div>
+			</div>
 			
 			{showControls && (
 				<Controls onZoomIn={() => doZoom(2)} onZoomOut={() => doZoom(0.5)} onReset={reset} />
@@ -106,6 +122,16 @@ export default function Globe({
         isOpen={search.isSearchOpen}
         onClose={search.closeSearch}
         onSearch={handleSearchExecute}
+      />
+
+      <FilterOverlay
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        selectedCategories={filters.selectedCategories}
+        onToggleCategory={filters.toggleCategory}
+        onSelectAll={() => filters.setCategories(categories)}
+        onClearAll={filters.clearAll}
+        categories={categories}
       />
     </div>
   );

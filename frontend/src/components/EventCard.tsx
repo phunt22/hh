@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { formatCategoryLabel } from "../utils/categories";
 import type { EventPoint } from "../types";
 import styles from "./EventCard.module.css";
 
@@ -6,15 +7,7 @@ export default function EventCard({ event }: { event: EventPoint }) {
   const [showSimilar, setShowSimilar] = useState(false);
   
   // i.e. "performing-arts" -> "Performing Arts"
-  const prettifyCategory = (value?: string | null) => {
-    if (!value) return "";
-    return value
-      .replace(/[-_]+/g, " ")
-      .trim()
-      .split(/\s+/)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-      .join(" ");
-  };
+  const prettifyCategory = (value?: string | null) => formatCategoryLabel(value || "");
 
   const formatDate = (iso?: string) => {
     if (!iso) return null;

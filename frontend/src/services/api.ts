@@ -1,4 +1,5 @@
 import type { EventPoint } from '../types';
+import { normalizeCategorySlug } from '../utils/categories';
 
 const API_BASE_URL = 'https://fastapi-backend-e0m2.onrender.com/api/v1';
 
@@ -63,7 +64,7 @@ export function mapBackendEventToEventPoint(backendEvent: BackendEvent): EventPo
     attendance,
     start: backendEvent.start,
     end: backendEvent.end,
-    category: backendEvent.category,
+    category: normalizeCategorySlug(backendEvent.category) || '',
     location: backendEvent.location,
   };
 }
@@ -188,5 +189,14 @@ export class EventsAPI {
       radius_km: radiusKm,
       limit,
     });
+  }
+
+  static async getCategories(): Promise<string[]> {
+    const response = await fetch(`${API_BASE_URL}/events/categories/list`);
+    if (!response.ok) {
+      throw new Error(`Failed to fetch categories: ${response.statusText}`);
+    }
+    const categories: string[] = await response.json();
+    return categories;
   }
 }
