@@ -16,6 +16,7 @@ class EventsCacheService:
     def __init__(self):
         self.min_cache_threshold = 100
         self.popular_events_ttl = 3600  # 1 hour in seconds
+        self.busiest_cities_ttl = 3600
 
     async def get_cached_events_with_fallback(
         self,
@@ -289,6 +290,142 @@ class EventsCacheService:
         
         logger.info(f"Fetched {len(popular_events)} popular events from DB for {date.strftime('%Y-%m-%d')}")
         return popular_events
+
+    async def get_busiest_cities(
+        self, 
+        session: AsyncSession, 
+        time_window_days: int = 7, 
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """
+        Get the busiest cities based on event attendance within a specified time window.
+        Results are cached.
+        """
+        logger.info(f"get_busiest_cities called with time_window_days={time_window_days}, limit={limit}")
+
+        end_time = datetime.now(timezone.utc)
+        start_time = end_time - timedelta(days=time_window_days)
+        logger.debug(f"Time window: {start_time.isoformat()} to {end_time.isoformat()}")
+
+        cache_key = f"busiest_cities:{time_window_days}:{limit}"
+        logger.debug(f"Cache key generated: {cache_key}")
+
+        # Try to get from cache first
+        try:
+            logger.debug("Attempting to retrieve busiest cities from cache")
+            cached_data = await redis_cache.redis_client.get(cache_key)
+            if cached_data:
+                busiest_cities = json.loads(cached_data)
+                logger.info(f"Retrieved {len(busiest_cities)} busiest cities from cache (key={cache_key})")
+                return busiest_cities
+            else:
+                logger.info("No cached data found for busiest cities")
+        except Exception as e:
+            logger.error(f"Error retrieving busiest cities from cache: {e}")
+
+        # If not in cache, fetch from database
+        logger.info("Fetching busiest cities from database")
+        # We need to extract the city name from the 'location' field
+        # A simple approach: take everything before the first comma, or the whole string
+        city_expression = func.split_part(Event.location, ',', 1)
+
+        query = (
+            select(
+                city_expression.label('city'),
+                func.sum(Event.attendance).label('total_attendance')
+            )
+            .where(
+                Event.start >= start_time,
+                Event.start <= end_time,
+                Event.attendance.is_not(None),
+                Event.location.is_not(None)
+            )
+            .group_by(city_expression)
+            .order_by(desc(func.sum(Event.attendance)))
+            .limit(limit)
+        )
+        
+        logger.debug("Executing busiest cities query")
+        result = await session.execute(query)
+        busiest_cities_data = []
+
+        for idx, row in enumerate(result):
+            # For each busiest city, fetch its top 5 events
+            city_name = row.city.strip()
+            logger.debug(f"Processing city {idx+1}: '{city_name}' with total_attendance={row.total_attendance}")
+
+            top_events_for_city = await self._get_top_events_for_city(
+                session=session,
+                city_name=city_name,
+                start_time=start_time,
+                end_time=end_time,
+                event_limit=5  # Top 5 events per city
+            )
+            logger.debug(f"Fetched {len(top_events_for_city)} top events for city '{city_name}'")
+
+            busiest_cities_data.append({
+                "city": city_name, # .strip() to remove leading/trailing whitespace
+                "total_attendance": row.total_attendance,
+                "top_events": [event.dict() for event in top_events_for_city] # Convert EventResponse to dict
+            })
+
+        # Cache the results
+        try:
+            logger.debug(f"Caching {len(busiest_cities_data)} busiest cities with key={cache_key} and TTL={self.busiest_cities_ttl}")
+            await redis_cache.redis_client.setex(
+                cache_key,
+                self.busiest_cities_ttl,
+                json.dumps(busiest_cities_data, default=str)
+            )
+            logger.info(f"Cached {len(busiest_cities_data)} busiest cities for {time_window_days} days (key={cache_key})")
+        except Exception as e:
+            logger.error(f"Error caching busiest cities: {e}")
+
+        logger.info(f"Returning {len(busiest_cities_data)} busiest cities from DB")
+        return busiest_cities_data
+
+    async def _get_top_events_for_city(
+        self,
+        session: AsyncSession,
+        city_name: str,
+        start_time: datetime,
+        end_time: datetime,
+        event_limit: int
+    ) -> List[EventResponse]:
+        """
+        Helper function to fetch top events for a given city within a time window.
+        """
+        logger.debug(
+            f"Fetching top {event_limit} events for city '{city_name}' "
+            f"between {start_time} and {end_time}"
+        )
+        city_expression = func.split_part(Event.location, ',', 1)
+
+        query = (
+            select(Event)
+            .where(
+                city_expression == city_name,
+                Event.start >= start_time,
+                Event.start <= end_time,
+                Event.attendance.is_not(None) # Prioritize events with attendance
+            )
+            .order_by(desc(Event.attendance))
+            .limit(event_limit)
+        )
+        
+        try:
+            result = await session.execute(query)
+            events = result.scalars().all()
+            logger.debug(
+                f"Found {len(events)} events for city '{city_name}' "
+                f"in the specified time window"
+            )
+        except Exception as e:
+            logger.error(
+                f"Error fetching top events for city '{city_name}': {e}"
+            )
+            events = []
+        return [EventResponse.from_orm(event) for event in events]
 
 
 # Global instance

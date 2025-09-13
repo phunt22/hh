@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional
 from app.core.database import get_session
 from app.models.event import Event
 from app.schemas.event import (
+    BusiestCity,
     EventResponse, 
     SimilaritySearchRequest, 
     SimilaritySearchResponse,
@@ -40,23 +41,6 @@ async def get_events(
         category=category,
         location_query=location_query
     )
-
-
-@router.get("/{event_id}", response_model=EventResponse)
-async def get_event(
-    event_id: str,
-    session: AsyncSession = Depends(get_session)
-) -> EventResponse:
-    """Get a specific event by ID"""
-    
-    query = select(Event).where(Event.id == event_id)
-    result = await session.execute(query)
-    event = result.scalar_one_or_none()
-    
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
-    
-    return EventResponse.from_orm(event)
 
 
 @router.post("/search/similar", response_model=SimilaritySearchResponse)
@@ -121,6 +105,27 @@ async def search_similar_events(
     except Exception as e:
         logger.error(f"Error in similarity search: {e}")
         raise HTTPException(status_code=500, detail="Error performing similarity search")
+
+@router.get("/busiest-cities", response_model=List[BusiestCity])
+async def get_busiest_cities(
+    session: AsyncSession = Depends(get_session),
+    time_window_days: int = Query(7, ge=1, description="Number of days to consider for busyness"),
+    limit: int = Query(10, ge=1, le=50, description="Number of busiest cities to return")
+) -> List[Dict[str, Any]]:
+    """
+    Get the top N busiest cities in the world based on event attendance
+    within a specified time window. Results are cached for 1 hour.
+    """
+    try:
+        return await events_cache_service.get_busiest_cities(
+            session=session,
+            time_window_days=time_window_days,
+            limit=limit
+        )
+    except Exception as e:
+        logger.error(f"Error getting busiest cities: {e}")
+        raise HTTPException(status_code=500, detail="Error getting busiest cities")
+
 
 
 @router.get("/{event_id}/similar", response_model=SimilaritySearchResponse)
@@ -302,6 +307,21 @@ async def create_event(
         await session.rollback()
         raise HTTPException(status_code=500, detail="Error creating event")
 
+@router.get("/{event_id}", response_model=EventResponse)
+async def get_event(
+    event_id: str,
+    session: AsyncSession = Depends(get_session)
+) -> EventResponse:
+    """Get a specific event by ID"""
+    
+    query = select(Event).where(Event.id == event_id)
+    result = await session.execute(query)
+    event = result.scalar_one_or_none()
+    
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+    
+    return EventResponse.from_orm(event)
 
 @router.put("/{event_id}", response_model=EventResponse)
 async def update_event(

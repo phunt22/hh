@@ -1,10 +1,14 @@
-from fastapi import FastAPI, HTTPException
+from typing import Any, Dict, List
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
-from app.core.database import create_db_and_tables
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import create_db_and_tables, get_session
 from app.api.routes import etl, events
 from app.services.etl_scheduler import etl_scheduler
+from app.schemas.event import BusiestCity
 
 # Configure logging
 logging.basicConfig(
