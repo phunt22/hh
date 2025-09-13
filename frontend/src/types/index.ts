@@ -4,9 +4,12 @@ export type EventPoint = {
   lat: number;
   lng: number;
   description?: string;
-  popularity?: number; // [0,100]
-  time?: string; // ISO 8601
+  attendance?: number;
+  start?: string; // ISO 8601
+  end?: string;   // ISO 8601
   category?: string;
+  location?: string;
+  similarEvents?: EventPoint[];
 };
 
 export type GlobeProps = {

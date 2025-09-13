@@ -1,4 +1,5 @@
 import type { EventPoint } from '../types';
+import { normalizeCategorySlug } from '../utils/categories';
 
 export const zoomToRadiusKm = (z: number) => {
   if (z >= 16) return 1.2;
@@ -20,9 +21,11 @@ export const toFeatureCollection = (rows: EventPoint[]) => ({
       id: e.id,
       title: e.title,
       description: e.description ?? "",
-      time: e.time ?? "",
-      category: e.category ?? "",
-      popularity: Number.isFinite(e.popularity) ? e.popularity : 1
+      start: e.start ?? null,
+      end: e.end ?? null,
+      category: normalizeCategorySlug(e.category) || "",
+      location: e.location ?? "",
+      attendance: (e as any).attendance ?? (e as any).expectedAttendees ?? null,
     }
   }))
 });

@@ -12,6 +12,7 @@ class EventBase(BaseModel):
     start: Optional[datetime] = None
     end: Optional[datetime] = None
     location: Optional[str] = ""
+    attendance: Optional[int] = None
 
 
 class EventCreate(EventBase):
@@ -60,3 +61,12 @@ class ETLStatus(BaseModel):
     events_created: int = 0
     events_updated: int = 0
     processing_time: Optional[float] = None
+
+class TopEvent(EventResponse):
+    attendance: Optional[int] = None
+    popularity_rank: Optional[int] = None
+
+class BusiestCity(BaseModel):
+    city: str
+    total_attendance: int
+    top_events: List[TopEvent] = []

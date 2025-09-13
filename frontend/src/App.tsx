@@ -1,17 +1,17 @@
 import './App.css'
 import Globe from './components/Globe'
-import { SAMPLE_EVENTS } from './constants/mapConstants'
+import { EventsAPI } from './services/api'
+import { DEFAULT_STYLE } from './constants/mapConstants'
 
 function App() {
-  const HYBRID = `https://api.maptiler.com/maps/hybrid/style.json?key=${import.meta.env.VITE_MAPTILER_API_KEY}`;
+  const HYBRID = import.meta.env.VITE_MAPTILER_API_KEY
+    ? `https://api.maptiler.com/maps/hybrid/style.json?key=${import.meta.env.VITE_MAPTILER_API_KEY}`
+    : DEFAULT_STYLE;
   
-  // TODO IMPLEMENT
-  const handleViewportQuery = async (_center: { lat: number; lng: number }, _radiusKm: number) => {
-    // TODO IMPLEMENT
+  const handleViewportQuery = async (center: { lat: number; lng: number }, radiusKm: number) => {
+    const rows = await EventsAPI.getEventsInViewport(center, radiusKm, 300);
 
-    // simulate api delay
-    await new Promise(resolve => setTimeout(resolve, 100));
-    return SAMPLE_EVENTS;
+    return rows;
   };
 
   return (

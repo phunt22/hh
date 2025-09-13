@@ -71,67 +71,55 @@ class PredictHQService:
         
         all_events = []
         offset = 0
-        limit = min(100, max_events)  # Batch size
-        
-        while len(all_events) < max_events:
+        limit = 100  # Batch size
+
+        logger.info(f"Starting paginated fetch of up to {max_events} events from PredictHQ with limit {limit} per page and filters: {filters}")
+        total_fetched = 0
+        for page in range((max_events // limit) + 1):
+            current_offset = page * limit
+            logger.debug(f"Fetching events: page={page}, offset={current_offset}, limit={limit}")
             try:
                 response = await self.fetch_events(
                     limit=limit,
-                    offset=offset,
+                    offset=current_offset,
                     **filters
                 )
                 
                 events = response.get("results", [])
+                logger.info(f"Fetched {len(events)} events at offset {current_offset}")
                 if not events:
+                    logger.info(f"No more events returned at offset {current_offset}. Stopping pagination.")
                     break
                 
                 all_events.extend(events)
+                total_fetched += len(events)
                 
                 # Check if there are more events
                 if len(events) < limit:
+                    logger.info(f"Received less than limit ({limit}) events at offset {current_offset}. Pagination complete.")
                     break
-                
-                offset += limit
-                
-                # Prevent infinite loops
-                if offset > 10000:  # Reasonable limit
-                    logger.warning("Reached offset limit, stopping pagination")
-                    break
-                
+
                 # Rate limiting - be nice to the API
                 await asyncio.sleep(0.1)
-                
+
             except Exception as e:
-                logger.error(f"Error in pagination at offset {offset}: {e}")
+                logger.error(f"Error in pagination at offset {current_offset}: {e}")
                 break
-        
-        return all_events[:max_events]
+
+        logger.info(f"Completed paginated fetch. Total events fetched: {total_fetched}")
+        return all_events
 
     def parse_event_data(self, raw_event: Dict[str, Any]) -> Dict[str, Any]:
         """Parse raw event data from PredictHQ into our format"""
         
         # Extract location data safely
-        location_data = raw_event.get("location", {})
-        longitude = None
-        latitude = None
-        location_str = ""
+        location_data = raw_event.get("location", [])
+        longitude = float(location_data[0])
+        latitude = float(location_data[1])
+        location_str = raw_event.get("address", {}).get("formatted_address", "")
+        city = raw_event.get("address", {}).get("locality", "")
+        region = raw_event.get("address", {}).get("region", "")
         
-        if isinstance(location_data, dict):
-            # Handle GeoJSON format
-            if "geometry" in location_data and location_data["geometry"]:
-                coords = location_data["geometry"].get("coordinates", [])
-                if len(coords) >= 2:
-                    longitude = float(coords[0])
-                    latitude = float(coords[1])
-            
-            # Handle properties for location string
-            if "properties" in location_data:
-                props = location_data["properties"]
-                location_parts = []
-                for key in ["name", "address", "locality", "region", "country"]:
-                    if key in props and props[key]:
-                        location_parts.append(str(props[key]))
-                location_str = ", ".join(location_parts)
         
         # Parse dates safely
         start_date = None
@@ -160,23 +148,27 @@ class PredictHQService:
         return {
             "id": str(raw_event["id"]),
             "title": str(raw_event.get("title", "")).strip() or "Untitled Event",
-            "description": str(raw_event.get("description", "")).strip(),
+            "description": str(raw_event.get("description", "")).replace("Sourced from predicthq.com", "").strip(),
             "category": str(raw_event.get("category", "")).strip() or "other",
             "longitude": longitude,
             "latitude": latitude,
             "location": location_str,
             "start": start_date,
             "end": end_date,
-            "attendance": int(raw_event.get("phq_attendance", "0")),
-            "spend_amount": int(raw_event.get("predicted_event_spend", "0")),
-            "predicthq_updated": updated_at or datetime.now(timezone.utc)
+            "attendance": int(raw_event["phq_attendance"]) if "phq_attendance" in raw_event and raw_event["phq_attendance"] is not None else 0,
+            "spend_amount": int(raw_event["predicted_event_spend"]) if "predicted_event_spend" in raw_event and raw_event["predicted_event_spend"] is not None else 0,
+            "predicthq_updated": updated_at or datetime.now(timezone.utc),
+            "city": city,
+            "region": region
         }
 
     async def test_connection(self) -> bool:
         """Test connection to PredictHQ API"""
         try:
             response = await self.fetch_events(limit=1)
-            return bool(response.get("results"))
+            result = response.get("results")
+            print("result", result)
+            return bool(result)
         except Exception as e:
             logger.error(f"PredictHQ connection test failed: {e}")
             return False

@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional, Dict, Any
@@ -6,7 +7,11 @@ from app.schemas.event import ETLStatus
 from app.utils.batch_processing import batch_processor
 from app.services.predicthq import predicthq_service
 from app.services.similarity import similarity_service
+from app.core.config import settings
+from app.services.redis_cache import redis_cache
 import logging
+import redis
+
 
 logger = logging.getLogger(__name__)
 
@@ -14,6 +19,9 @@ router = APIRouter(prefix="/etl", tags=["ETL"])
 
 # Store ETL status (in production, use Redis or database)
 etl_status_store: Dict[str, Dict[str, Any]] = {}
+
+# Initialize Redis client
+redis_client = redis.from_url(settings.redis_url)
 
 
 @router.post("/trigger", response_model=ETLStatus)
@@ -25,7 +33,8 @@ async def trigger_etl(
     location: Optional[str] = Query(None, description="Filter by location"),
     start_date: Optional[str] = Query(None, description="Filter by start date (ISO format)"),
     end_date: Optional[str] = Query(None, description="Filter by end date (ISO format)"),
-    calculate_similarities: bool = Query(True, description="Calculate event similarities after ETL")
+    calculate_similarities: bool = Query(True, description="Calculate event similarities after ETL"),
+    use_cache: bool = Query(True, description="Use Redis cache for events")
 ) -> ETLStatus:
     """Trigger ETL process to fetch and process events from PredictHQ"""
     
@@ -61,7 +70,8 @@ async def trigger_etl(
             job_id,
             max_events,
             calculate_similarities,
-            filters
+            filters,
+            use_cache,
         )
         return ETLStatus(
             status="running",
@@ -143,7 +153,8 @@ async def run_etl_pipeline(
     job_id: str,
     max_events: int,
     calculate_similarities: bool,
-    filters: Dict[str, Any]
+    filters: Dict[str, Any],
+    use_cache: bool = True,
 ):
     """Background task to run the complete ETL pipeline"""
     
@@ -159,6 +170,37 @@ async def run_etl_pipeline(
         
         # Run ETL process
         async with AsyncSessionLocal() as session:
+            # Determine date for cache key
+            cache_date = datetime.now(timezone.utc)
+            
+            # If specific dates provided, use the start date for caching
+            if filters.get("start_date"):
+                try:
+                    cache_date = datetime.fromisoformat(filters["start_date"].replace("Z", "+00:00"))
+                except:
+                    pass  # Use current date if parsing fails
+            
+            # Generate daily cache key
+            cache_key = redis_cache.get_daily_cache_key(cache_date)
+            
+            logger.info(f"ETL job {job_id}: Using cache key {cache_key}")
+            
+            # Check cache first if enabled
+            cached_events = []
+            if use_cache:
+                update_status("cache_check", {"message": "Checking Redis cache..."})
+                cached_events = await redis_cache.get_cached_events(cache_key) or []
+                
+                if cached_events:
+                    logger.info(f"Found {len(cached_events)} cached events for {cache_key}")
+                    update_status("cache_hit", {
+                        "message": f"Found {len(cached_events)} cached events",
+                        "processed": len(cached_events)
+                    })
+            
+            # Fetch new events from PredictHQ
+            update_status("fetching", {"message": "Fetching events from PredictHQ..."})
+            
             result = await batch_processor.fetch_and_process_events(
                 session=session,
                 max_events=max_events,
@@ -176,25 +218,37 @@ async def run_etl_pipeline(
                 "processing_time": result["processing_time"]
             })
             
-            # Calculate similarities if requested
-            '''
-            if calculate_similarities and result["status"] == "completed":
-                etl_status_store[job_id]["message"] = "Calculating event similarities..."
+            if use_cache and result["status"] == "completed" and result["events_processed"] > 0:
+                update_status("caching", {"message": "Updating Redis cache..."})
                 
-                # Get all event IDs
-                from sqlalchemy import select
-                from app.models.event import Event
-                
-                query = select(Event.id).where(Event.embeddings.is_not(None))
-                result = await session.execute(query)
-                event_ids = [row[0] for row in result.all()]
-                
-                if event_ids:
-                    similarities_count = await similarity_service.calculate_and_store_similarities(
-                        session, event_ids[:500]  # Limit for performance
+                # Since we don't have direct access to raw events from batch_processor,
+                # we'll fetch them again just for caching (this could be optimized)
+                try:
+                    raw_events = await predicthq_service.fetch_all_events_paginated(
+                        max_events=max_events,
+                        **filters
                     )
-                    etl_status_store[job_id]["message"] = f"ETL completed. Calculated {similarities_count} similarities."
-            '''
+
+
+                    
+                    if raw_events:
+                        # Add new events to cache
+                        parsed_events = [predicthq_service.parse_event_data(event) for event in raw_events]
+                        cache_success = await redis_cache.add_events_to_cache(cache_key, parsed_events)
+                        
+                        if cache_success:
+                            logger.info(f"Successfully updated cache key {cache_key} with {len(raw_events)} events")
+                            
+                            # Get updated cache info
+                            cache_info = await redis_cache.get_cache_info(cache_key)
+                            etl_status_store[job_id]["cache_info"] = cache_info
+                        else:
+                            logger.warning(f"Failed to update cache key {cache_key}")
+                
+                except Exception as cache_error:
+                    logger.error(f"Cache update error: {cache_error}")
+                    # Don't fail the entire ETL if caching fails
+            
     except Exception as e:
         logger.error(f"ETL pipeline error for job {job_id}: {e}")
         etl_status_store[job_id].update({

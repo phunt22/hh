@@ -1,9 +1,14 @@
-from fastapi import FastAPI, HTTPException
+from typing import Any, Dict, List
+from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import logging
-from app.core.database import create_db_and_tables
+
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.core.database import create_db_and_tables, get_session
 from app.api.routes import etl, events
+from app.services.etl_scheduler import etl_scheduler
+from app.schemas.event import BusiestCity
 
 # Configure logging
 logging.basicConfig(
@@ -21,6 +26,9 @@ async def lifespan(app: FastAPI):
     try:
         await create_db_and_tables()
         logger.info("Database tables created successfully")
+
+        await etl_scheduler.start_hourly_etl()
+        logger.info("✅ Hourly ETL scheduler started")
     except Exception as e:
         logger.error(f"Error creating database tables: {e}")
         raise
