@@ -4,8 +4,9 @@ export type EventPoint = {
   lat: number;
   lng: number;
   description?: string;
-  expectedAttendees?: number;
-  time?: string; // ISO 8601
+  attendance?: number;
+  start?: string; // ISO 8601
+  end?: string;   // ISO 8601
   category?: string;
   location?: string;
   similarEvents?: EventPoint[];

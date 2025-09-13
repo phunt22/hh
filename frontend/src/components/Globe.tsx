@@ -2,10 +2,11 @@ import { useMemo, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { GlobeProps } from '../types';
 import { toFeatureCollection } from '../utils/mapUtils';
-import { DEFAULT_STYLE, DEFAULT_VIEW, SAMPLE_EVENTS } from '../constants/mapConstants';
+import { DEFAULT_STYLE, DEFAULT_VIEW } from '../constants/mapConstants';
 import { useMapInstance } from '../hooks/useMapInstance';
 import { useMapViewport, useMapControls } from '../hooks/useMapViewport';
 import { useSearch } from '../hooks/useSearch';
+import type { EventPoint } from '../types';
 import Toast from './Toast';
 import Controls from './Controls';
 import HoverModal, { type HoverInfo } from "./HoverModal";
@@ -29,7 +30,7 @@ export default function Globe({
   const [panel, setPanel] = useState<{ locationLabel: string; events: any[] } | null>(null);
 
   const initialData = useMemo(
-    () => toFeatureCollection((data ?? SAMPLE_EVENTS).slice(0, maxClientPoints)),
+    () => toFeatureCollection((data ?? []).slice(0, maxClientPoints)),
     [data, maxClientPoints]
   );
 
@@ -59,7 +60,11 @@ export default function Globe({
   const handleSearchExecute = async (query: string) => {
     const result = await search.executeSearch(query);
     if (result.success) {
-      setToastMessage(result.message);
+      // open panel to show results
+      const results = (result as any).results as EventPoint[];
+      setPanel({ locationLabel: `Results for "${query}"`, events: results });
+    } else {
+      setToastMessage('Search failed');
     }
     search.closeSearch();
   };

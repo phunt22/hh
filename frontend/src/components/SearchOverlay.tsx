@@ -41,15 +41,15 @@ export default function SearchOverlay({ isOpen, onClose, onSearch }: SearchOverl
     setIsLoading(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (query.trim() && !isLoading) {
       setIsLoading(true);
-      timeoutRef.current = setTimeout(() => {
-        setIsLoading(false);
+      try {
         onSearch(query.trim());
-        timeoutRef.current = null;
-      }, 4000); // TODO: remove timeout (simulated loading)
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 

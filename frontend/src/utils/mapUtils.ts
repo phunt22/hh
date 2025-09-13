@@ -20,10 +20,11 @@ export const toFeatureCollection = (rows: EventPoint[]) => ({
       id: e.id,
       title: e.title,
       description: e.description ?? "",
-      time: e.time ?? "",
+      start: e.start ?? null,
+      end: e.end ?? null,
       category: e.category ?? "",
       location: e.location ?? "",
-      expectedAttendees: e.expectedAttendees ?? null,
+      attendance: (e as any).attendance ?? (e as any).expectedAttendees ?? null,
     }
   }))
 });
