@@ -1,35 +1,26 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
 import './App.css'
+import Globe from './components/Globe'
+import { SAMPLE_EVENTS } from './constants/mapConstants'
 
 function App() {
-  const [count, setCount] = useState(0)
+  const HYBRID = `https://api.maptiler.com/maps/hybrid/style.json?key=${import.meta.env.VITE_MAPTILER_API_KEY}`;
+  
+  // TODO IMPLEMENT
+  const handleViewportQuery = async (_center: { lat: number; lng: number }, _radiusKm: number) => {
+    // TODO IMPLEMENT
+
+    // simulate api delay
+    await new Promise(resolve => setTimeout(resolve, 100));
+    return SAMPLE_EVENTS;
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <Globe
+      mapStyle={HYBRID}
+      onViewportQuery={handleViewportQuery}
+      startAtUserLocation
+    />
   )
 }
 
-export default App
+export default App;
