@@ -124,7 +124,12 @@ class EventsCacheService:
             location=event_dict.get('location', ''),
             related_event_ids=event_dict.get('related_event_ids', ''),
             created_at=created_at,
-            updated_at=updated_at
+            updated_at=updated_at,
+            attendance=event_dict.get('attendance', 0),
+            spend_amount=event_dict.get('spend_amount', 0),
+            city=event_dict.get('city', ''),
+            region=event_dict.get('region', ''),
+
         )
 
     async def _fetch_from_database(

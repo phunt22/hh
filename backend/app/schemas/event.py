@@ -13,6 +13,9 @@ class EventBase(BaseModel):
     end: Optional[datetime] = None
     location: Optional[str] = ""
     attendance: Optional[int] = None
+    city: Optional[str] = None
+    region: Optional[str] = None
+    spend_amount: Optional[int] = None
 
 
 class EventCreate(EventBase):
