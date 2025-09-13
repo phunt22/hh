@@ -24,6 +24,8 @@ class Event(SQLModel, table=True):
     
     start: Optional[datetime] = Field(sa_column=Column(DateTime(timezone=True)), default=None)
     end: Optional[datetime] = Field(sa_column=Column(DateTime(timezone=True)), default=None)
+    city: Optional[str] = Field(default="")
+    region: Optional[str] = Field(default="")
     location: Optional[str] = Field(default="")
     attendance: Optional[int] = Field(sa_column=Column(Integer))
     spend_amount: Optional[int] = Field(sa_column=Column(Integer))

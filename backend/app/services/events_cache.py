@@ -327,11 +327,10 @@ class EventsCacheService:
         logger.info("Fetching busiest cities from database")
         # We need to extract the city name from the 'location' field
         # A simple approach: take everything before the first comma, or the whole string
-        city_expression = func.split_part(Event.location, ',', 1)
 
         query = (
             select(
-                city_expression.label('city'),
+                Event.city.label('city'),
                 func.sum(Event.attendance).label('total_attendance')
             )
             .where(
@@ -340,7 +339,7 @@ class EventsCacheService:
                 Event.attendance.is_not(None),
                 Event.location.is_not(None)
             )
-            .group_by(city_expression)
+            .group_by(Event.city)
             .order_by(desc(func.sum(Event.attendance)))
             .limit(limit)
         )

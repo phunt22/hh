@@ -117,6 +117,8 @@ class PredictHQService:
         longitude = float(location_data[0])
         latitude = float(location_data[1])
         location_str = raw_event.get("address", {}).get("formatted_address", "")
+        city = raw_event.get("address", {}).get("locality", "")
+        region = raw_event.get("address", {}).get("region", "")
         
         
         # Parse dates safely
@@ -155,7 +157,9 @@ class PredictHQService:
             "end": end_date,
             "attendance": int(raw_event["phq_attendance"]) if "phq_attendance" in raw_event and raw_event["phq_attendance"] is not None else 0,
             "spend_amount": int(raw_event["predicted_event_spend"]) if "predicted_event_spend" in raw_event and raw_event["predicted_event_spend"] is not None else 0,
-            "predicthq_updated": updated_at or datetime.now(timezone.utc)
+            "predicthq_updated": updated_at or datetime.now(timezone.utc),
+            "city": city,
+            "region": region
         }
 
     async def test_connection(self) -> bool:
