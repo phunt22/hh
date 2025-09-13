@@ -47,9 +47,9 @@ class ETLScheduler:
         
         while self.is_running:
             try:
-                # Calculate 1-hour time window ending now
+                # Calculate 10 minute time window ending now
                 end_time = datetime.now(timezone.utc)
-                start_time = end_time - timedelta(hours=1)
+                start_time = end_time - timedelta(minutes=10)
                 
                 logger.info(f"⏰ Starting ETL for window: {start_time.strftime('%Y-%m-%d %H:%M')} to {end_time.strftime('%H:%M')}")
                 
@@ -62,7 +62,7 @@ class ETLScheduler:
             # Wait 1 hour before next run
             if self.is_running:
                 logger.info("⏱️ Waiting 1 hour for next ETL run...")
-                await asyncio.sleep(3600)  # 1 hour = 3600 seconds
+                await asyncio.sleep(600)  # 1 hour = 3600 seconds
     
     async def _trigger_etl_via_api(self, start_time: datetime, end_time: datetime):
         """Trigger ETL using the existing REST API"""
