@@ -3,7 +3,7 @@ import { formatCategoryLabel } from "../utils/categories";
 import type { EventPoint } from "../types";
 import styles from "./EventCard.module.css";
 
-export default function EventCard({ event }: { event: EventPoint }) {
+export default function EventCard({ event, onClick }: { event: EventPoint; onClick?: () => void }) {
   const [showSimilar, setShowSimilar] = useState(false);
   
   // i.e. "performing-arts" -> "Performing Arts"
@@ -26,7 +26,7 @@ export default function EventCard({ event }: { event: EventPoint }) {
   };
 
   return (
-    <div className={styles.card}>
+    <div className={`${styles.card} ${onClick ? styles.clickable : ""}`} onClick={onClick} role={onClick ? "button" : undefined}>
       <div className={styles.title}>{event.title}</div>
       
       {(event.category || event.start || event.end) && (
@@ -60,7 +60,7 @@ export default function EventCard({ event }: { event: EventPoint }) {
         <div className={styles.similarSection}>
           <button 
             className={styles.similarToggle}
-            onClick={() => setShowSimilar(!showSimilar)}
+            onClick={(e) => { e.stopPropagation(); setShowSimilar(!showSimilar); }}
           >
             Similar Events ({event.similarEvents.length}) {showSimilar ? "▼" : "▶"}
           </button>

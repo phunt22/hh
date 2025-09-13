@@ -18,6 +18,7 @@ from app.services.embedding import embedding_service
 import logging
 from app.services.events_cache import events_cache_service
 from app.services.enhanced_similarity import enhanced_similarity_service
+import json
 
 logger = logging.getLogger(__name__)
 
@@ -198,7 +199,7 @@ async def get_popular_events_daily(
             session=session,
             date=target_date
         )
-        
+
         return {
             "date": target_date.strftime("%Y-%m-%d"),
             "popular_events": popular_events,
@@ -218,14 +219,45 @@ async def get_popular_events_daily(
 @router.get("/categories/list")
 async def get_categories(
     session: AsyncSession = Depends(get_session)
-) -> List[str]:
-    """Get list of all event categories"""
+) -> Dict[str, Any]:
+    """Get list of all event categories with colors"""
+    
+    CATEGORY_COLORMAP = {
+        "academic": "#4F46E5",           
+        "school-holidays": "#F59E0B",    
+        "public-holidays": "#EF4444",    
+        "observances": "#8B5CF6",        
+        "politics": "#DC2626",           
+        "conferences": "#059669",        
+        "expos": "#0891B2",              
+        "concerts": "#EC4899",           
+        "festivals": "#F97316",          
+        "performing-arts": "#A855F7",    
+        "sports": "#22C55E",             
+        "community": "#06B6D4",          
+        "daylight-savings": "#84CC16",   
+        "airport-delays": "#6B7280",     
+        "severe-weather": "#1F2937",     
+        "disasters": "#B91C1C",          
+        "health-warnings": "#DC2626"     
+    }
     
     query = select(Event.category).distinct().where(Event.category.is_not(None))
     result = await session.execute(query)
     categories = [row[0] for row in result.all() if row[0]]
     
-    return sorted(categories)
+    categories_with_colors = []
+    for category in sorted(categories):
+        color = CATEGORY_COLORMAP.get(category, "#6B7280") ## gray for default
+        categories_with_colors.append({
+            "name": category,
+            "color": color
+        })
+    
+    return {
+        "categories": categories,
+        "colormap": CATEGORY_COLORMAP
+    }
 
 
 @router.get("/stats/summary")
