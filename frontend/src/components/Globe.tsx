@@ -18,6 +18,7 @@ import FilterOverlay from './FilterOverlay';
 import { useFilters } from '../hooks/useFilters';
 import { useMapCategoryFilter } from '../hooks/useMapCategoryFilter';
 import { useCategories } from '../hooks/useCategories';
+import TimelineIcon from "./TimelineIcon";
 
 export default function Globe({
   data,
@@ -94,13 +95,12 @@ export default function Globe({
 			{/* Search + Filter icons stack (top-right) */}
 			<div style={{ position: "absolute", top: 12, right: panel ? 432 : 12, zIndex: 15 }}>
 				<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-					<SearchIcon 
-				onClick={search.openSearch} 
-				/>
+					<SearchIcon onClick={search.openSearch} />
 					<FilterIcon 
 						active={filters.isActive}
 						onClick={() => setIsFilterOpen(true)}
 					/>
+          <TimelineIcon onClick={() => {}}/>
 				</div>
 			</div>
 			
