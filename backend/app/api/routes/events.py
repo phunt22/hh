@@ -170,6 +170,7 @@ async def run_etl_pipeline(
             })
             
             # Calculate similarities if requested
+            '''
             if calculate_similarities and result["status"] == "completed":
                 etl_status_store[job_id]["message"] = "Calculating event similarities..."
                 
@@ -186,7 +187,7 @@ async def run_etl_pipeline(
                         session, event_ids[:500]  # Limit for performance
                     )
                     etl_status_store[job_id]["message"] = f"ETL completed. Calculated {similarities_count} similarities."
-    
+            '''
     except Exception as e:
         logger.error(f"ETL pipeline error for job {job_id}: {e}")
         etl_status_store[job_id].update({

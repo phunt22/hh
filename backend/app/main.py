@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 import logging
 from app.core.database import create_db_and_tables
 from app.api.routes import etl, events
+from app.services.etl_scheduler import etl_scheduler
 
 # Configure logging
 logging.basicConfig(
@@ -21,6 +22,9 @@ async def lifespan(app: FastAPI):
     try:
         await create_db_and_tables()
         logger.info("Database tables created successfully")
+
+        await etl_scheduler.start_hourly_etl()
+        logger.info("✅ Hourly ETL scheduler started")
     except Exception as e:
         logger.error(f"Error creating database tables: {e}")
         raise
