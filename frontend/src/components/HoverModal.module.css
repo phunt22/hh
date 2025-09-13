@@ -1,0 +1,36 @@
+.card {
+  position: absolute;
+  z-index: 10;
+  background: rgba(10, 10, 10, 0.9);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  border-radius: 8px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
+  padding: 10px 12px;
+  max-width: 280px;
+  pointer-events: auto;
+  backdrop-filter: blur(8px);
+  overscroll-behavior: contain;
+}
+
+.title {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.subtitle,
+.meta {
+  font-size: 12px;
+  color: #bbb;
+}
+
+.subtitle { margin-top: 4px; }
+.meta { margin-top: 6px; }
+
+.description {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #e6e6e6;
+}

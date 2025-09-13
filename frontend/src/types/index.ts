@@ -7,6 +7,7 @@ export type EventPoint = {
   popularity?: number; // [0,100]
   time?: string; // ISO 8601
   category?: string;
+  location?: string;
 };
 
 export type GlobeProps = {

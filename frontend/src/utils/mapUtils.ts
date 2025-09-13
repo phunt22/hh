@@ -22,6 +22,7 @@ export const toFeatureCollection = (rows: EventPoint[]) => ({
       description: e.description ?? "",
       time: e.time ?? "",
       category: e.category ?? "",
+      location: e.location ?? "",
       popularity: Number.isFinite(e.popularity) ? e.popularity : 1
     }
   }))

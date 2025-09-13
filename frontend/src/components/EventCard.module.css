@@ -1,0 +1,30 @@
+.card {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  padding: 12px 14px;
+  background: rgba(17, 17, 17, 0.96);
+}
+
+.title {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.subtitle {
+  font-size: 13px;
+  color: #bbb;
+  margin-top: 4px;
+}
+
+.meta {
+  font-size: 13px;
+  color: #bbb;
+  margin-top: 6px;
+}
+
+.description {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #e6e6e6;
+}
