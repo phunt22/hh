@@ -9,7 +9,7 @@ export type HoverInfo = {
     description?: string;
     time?: string;
     category?: string;
-    popularity?: number;
+    expectedAttendees?: number;
   };
 } | null;
 
@@ -17,7 +17,7 @@ export default function HoverModal({ info }: { info: HoverInfo }) {
   if (!info) return null;
 
   const { x, y, properties } = info;
-  const { title, description, time, category, popularity } = properties;
+  const { title, description, time, category, expectedAttendees } = properties;
 
   return (
     <div
@@ -34,8 +34,10 @@ export default function HoverModal({ info }: { info: HoverInfo }) {
           {time ? new Date(time).toLocaleString() : null}
         </div>
       )}
-      {typeof popularity === "number" && !Number.isNaN(popularity) && (
-        <div className={styles.meta}>Popularity: {Math.round(popularity)}</div>
+      {typeof expectedAttendees === "number" && !Number.isNaN(expectedAttendees) && (
+        <div className={styles.meta}>
+          {expectedAttendees >= 1000 ? `${Math.round(expectedAttendees / 1000)}K expected` : `${expectedAttendees} expected`}
+        </div>
       )}
       {description && (
         <div className={styles.description}>

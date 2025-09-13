@@ -23,7 +23,7 @@ export const toFeatureCollection = (rows: EventPoint[]) => ({
       time: e.time ?? "",
       category: e.category ?? "",
       location: e.location ?? "",
-      popularity: Number.isFinite(e.popularity) ? e.popularity : 1
+      expectedAttendees: e.expectedAttendees ?? null,
     }
   }))
 });

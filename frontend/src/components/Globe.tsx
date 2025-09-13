@@ -73,13 +73,13 @@ export default function Globe({
             source: "events",
             maxzoom: 18,
             paint: {
-              // weight: use popularity linearly (0..100 -> 0..1)
+              // weight: use expectedAttendees (0..5000 -> 0..1)
               "heatmap-weight": [
                 "interpolate",
                 ["linear"],
-                ["coalesce", ["to-number", ["get", "popularity"]], 0],
+                ["coalesce", ["to-number", ["get", "expectedAttendees"]], 0],
                 0, 0,
-                100, 1
+                5000, 1
               ],
 
               // intensity grows with zoom => crisper red cores when zoomed
@@ -157,14 +157,14 @@ export default function Globe({
             id: "events-pins",
             type: "symbol",
             source: "events",
-            minzoom: 11, // TODO maybe make this smaller (would show closer)
+            minzoom: 12, // TODO maybe make this higher (would show closer)
             layout: {
               "icon-image": "pin-emoji",
               "icon-size": [
                 "interpolate",
                 ["linear"],
                 ["zoom"],
-                11, 0.45,
+                12, 0.45,
                 20, 0.8
               ],
               "icon-allow-overlap": true,
@@ -190,7 +190,7 @@ export default function Globe({
           return;
         }
         const props = f.properties as any;
-        const popularityNum = typeof props.popularity === "number" ? props.popularity : Number(props.popularity);
+        const attendeesNum = typeof props.expectedAttendees === "number" ? props.expectedAttendees : Number(props.expectedAttendees);
         setHoverInfo({
           x: e.point?.x ?? 0,
           y: e.point?.y ?? 0,
@@ -200,7 +200,7 @@ export default function Globe({
             description: props.description || "",
             time: props.time || "",
             category: props.category || "",
-            popularity: Number.isFinite(popularityNum) ? popularityNum : undefined
+            expectedAttendees: Number.isFinite(attendeesNum) ? attendeesNum : undefined
           }
         });
       });
@@ -222,13 +222,16 @@ export default function Globe({
         const fallbackLabel = Array.isArray(coords) && coords.length >= 2 ? `${coords[1].toFixed(5)}, ${coords[0].toFixed(5)}` : "Selected location";
         const locationLabel = String(firstProps.location || firstProps.title || fallbackLabel);
 
-        // collect events from all overlapping features
+        // collect events from all overlapping features and restore similarEvents from original data
         const events: EventPoint[] = feats.map((f: any) => {
           const p = f.properties || {};
           const c = f.geometry?.coordinates || [];
           const lon = Array.isArray(c) ? Number(c[0]) : NaN;
           const lat = Array.isArray(c) ? Number(c[1]) : NaN;
-          const popNum = typeof p.popularity === "number" ? p.popularity : Number(p.popularity);
+          const attendeesNum = typeof p.expectedAttendees === "number" ? p.expectedAttendees : Number(p.expectedAttendees);
+          
+          const originalEvent = (data ?? SAMPLE_EVENTS).find(e => e.id === p.id);
+          
           return {
             id: String(p.id ?? Math.random().toString(36).slice(2)),
             title: String(p.title ?? "Event"),
@@ -238,7 +241,8 @@ export default function Globe({
             time: p.time || "",
             category: p.category || "",
             location: p.location || locationLabel,
-            popularity: Number.isFinite(popNum) ? popNum : undefined
+            expectedAttendees: Number.isFinite(attendeesNum) ? attendeesNum : undefined,
+            similarEvents: originalEvent?.similarEvents || undefined
           } as EventPoint;
         });
 
