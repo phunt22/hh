@@ -40,6 +40,29 @@ export interface SimilaritySearchResponse {
   total_found: number;
 }
 
+export interface TopEvent {
+  id: string;
+  title: string;
+  description?: string;
+  category: string;
+  longitude?: number;
+  latitude?: number;
+  start?: string;
+  end?: string;
+  location?: string;
+  attendance?: number;
+  created_at: string;
+  updated_at: string;
+  related_event_ids?: string;
+  popularity_rank?: number;
+}
+
+export interface BusiestCity {
+  city: string;
+  total_attendance: number;
+  top_events: TopEvent[];
+}
+
 // TODO: remove this when api supports attendace | placeholder
 function getDefaultAttendanceFromId(id: string): number {
   let hash = 0;
@@ -200,5 +223,59 @@ export class EventsAPI {
     }
     const categories: string[] = await response.json();
     return categories;
+  }
+
+  static async getBusiestCities(params: {
+    time_window_days?: number;
+    limit?: number;
+  } = {}): Promise<BusiestCity[]> {
+    const queryParams = new URLSearchParams();
+    
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined) {
+        queryParams.append(key, value.toString());
+      }
+    });
+    
+    const response = await fetch(`${API_BASE_URL}/events/busiest-cities?${queryParams}`);
+    
+    if (!response.ok) {
+      throw new Error(`Failed to fetch busiest cities: ${response.statusText}`);
+    }
+    
+    return response.json();
+  }
+
+  // Voice services
+  static async transcribeAudio(audioBlob: Blob): Promise<{ text: string }> {
+    const formData = new FormData();
+    formData.append('audio', audioBlob, 'recording.wav');
+    
+    const response = await fetch(`${API_BASE_URL}/voice/transcribe`, {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to transcribe audio: ${response.statusText}`);
+    }
+    
+    return response.json();
+  }
+
+  static async synthesizeText(text: string): Promise<Blob> {
+    const response = await fetch(`${API_BASE_URL}/voice/synthesize`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`Failed to synthesize text: ${response.statusText}`);
+    }
+    
+    return response.blob();
   }
 }
