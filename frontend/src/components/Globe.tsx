@@ -8,7 +8,6 @@ import { useMapViewport, useMapControls } from '../hooks/useMapViewport';
 import { useSearch } from '../hooks/useSearch';
 import type { EventPoint } from '../types';
 import Toast from './Toast';
-import Controls from './Controls';
 import HoverModal, { type HoverInfo } from "./HoverModal";
 import EventListPanel from "./EventListPanel";
 import SearchIcon from './SearchIcon';
@@ -132,7 +131,7 @@ export default function Globe({
 				<Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
 			)}
 
-			<div style={{ position: "absolute", top: 12, right: panel ? 432 : 12, zIndex: 15 }}>
+			<div style={{ position: "absolute", top: 12, right: panel ? 504 : 12, zIndex: 15 }}>
 				<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 					<SearchIcon onClick={search.openSearch} />
 					<FilterIcon 
@@ -143,10 +142,6 @@ export default function Globe({
 				</div>
 			</div>
 			
-			{showControls && (
-				<Controls onZoomIn={() => doZoom(2)} onZoomOut={() => doZoom(0.5)} onReset={reset} />
-			)}
-
       <HoverModal info={hoverInfo} />
 
       {panel && (

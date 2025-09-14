@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import styles from "./FilterOverlay.module.css";
 import { formatCategoryLabel } from "../utils/categories";
 import { getCategoryColor, getReadableTextColor } from "../constants/categoryColors";
@@ -22,6 +22,15 @@ export default function FilterOverlay({
   onClearAll,
   categories,
 }: FilterOverlayProps) {
+  
+  // close button not focused immediately
+  const closeRef = useRef<HTMLButtonElement | null>(null)
+  useEffect(() => {
+    if (isOpen) {
+      const t = setTimeout(() => closeRef.current?.blur(), 0);
+      return () => clearTimeout(t);
+    }
+  }, [isOpen]);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
