@@ -439,4 +439,4 @@ const handleBusiestCitiesClick = async () => {
       }
     </div>
   );
-}
+};
