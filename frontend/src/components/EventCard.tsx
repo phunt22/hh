@@ -20,7 +20,7 @@ export default function EventCard({ event, onClick }: { event: EventPoint; onCli
   };
 
   const formatAttendees = (count?: number) => {
-    if (!count) return null;
+    if (count === undefined || count === null) return null; // should not happen, guard probably not neede
     if (count >= 1000) return `${Math.round(count / 1000)}K expected`;
     return `${count} expected`;
   };
@@ -44,7 +44,7 @@ export default function EventCard({ event, onClick }: { event: EventPoint; onCli
         </div>
       )}
       
-      {event.attendance && (
+      {(event.attendance !== undefined && event.attendance !== null) && (
         <div className={styles.metaRow}>
           <span className={styles.meta}>{formatAttendees(event.attendance)}</span>
         </div>
