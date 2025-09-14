@@ -113,12 +113,14 @@ class PredictHQService:
         """Parse raw event data from PredictHQ into our format"""
         
         # Extract location data safely
+        geo_data = raw_event.get("geo", {})
         location_data = raw_event.get("location", [])
         longitude = float(location_data[0])
         latitude = float(location_data[1])
-        location_str = raw_event.get("address", {}).get("formatted_address", "")
-        city = raw_event.get("address", {}).get("locality", "")
-        region = raw_event.get("address", {}).get("region", "")
+        
+        location_str = geo_data.get("address", {}).get("formatted_address", "")
+        city = geo_data.get("address", {}).get("locality", "")
+        region = geo_data.get("address", {}).get("region", "")
         
         
         # Parse dates safely
@@ -167,7 +169,8 @@ class PredictHQService:
         try:
             response = await self.fetch_events(limit=1)
             result = response.get("results")
-            print("result", result)
+            parsed_result = self.parse_event_data(result[0])
+            print("result", result, "parsed result", parsed_result)
             return bool(result)
         except Exception as e:
             logger.error(f"PredictHQ connection test failed: {e}")

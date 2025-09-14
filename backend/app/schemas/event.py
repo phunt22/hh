@@ -13,6 +13,9 @@ class EventBase(BaseModel):
     end: Optional[datetime] = None
     location: Optional[str] = ""
     attendance: Optional[int] = None
+    city: Optional[str] = None
+    region: Optional[str] = None
+    spend_amount: Optional[int] = None
 
 
 class EventCreate(EventBase):
@@ -66,7 +69,13 @@ class TopEvent(EventResponse):
     attendance: Optional[int] = None
     popularity_rank: Optional[int] = None
 
+class EventCount(BaseModel):
+    interval_end: datetime
+    interval_start: datetime
+    event_count: int
+
 class BusiestCity(BaseModel):
     city: str
     total_attendance: int
     top_events: List[TopEvent] = []
+    event_counts: List[EventCount] = []

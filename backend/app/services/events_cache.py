@@ -124,7 +124,12 @@ class EventsCacheService:
             location=event_dict.get('location', ''),
             related_event_ids=event_dict.get('related_event_ids', ''),
             created_at=created_at,
-            updated_at=updated_at
+            updated_at=updated_at,
+            attendance=event_dict.get('attendance', 0),
+            spend_amount=event_dict.get('spend_amount', 0),
+            city=event_dict.get('city', ''),
+            region=event_dict.get('region', ''),
+
         )
 
     async def _fetch_from_database(
@@ -313,7 +318,7 @@ class EventsCacheService:
         # Try to get from cache first
         try:
             logger.debug("Attempting to retrieve busiest cities from cache")
-            cached_data = await redis_cache.redis_client.get(cache_key)
+            cached_data = redis_cache.redis_client.get(cache_key)
             if cached_data:
                 busiest_cities = json.loads(cached_data)
                 logger.info(f"Retrieved {len(busiest_cities)} busiest cities from cache (key={cache_key})")
@@ -330,16 +335,17 @@ class EventsCacheService:
 
         query = (
             select(
-                Event.city.label('city'),
+                Event.region.label('region'),
                 func.sum(Event.attendance).label('total_attendance')
             )
             .where(
                 Event.start >= start_time,
                 Event.start <= end_time,
                 Event.attendance.is_not(None),
-                Event.location.is_not(None)
+                Event.region.is_not(None),
+                Event.region != ""
             )
-            .group_by(Event.city)
+            .group_by(Event.region)
             .order_by(desc(func.sum(Event.attendance)))
             .limit(limit)
         )
@@ -350,7 +356,10 @@ class EventsCacheService:
 
         for idx, row in enumerate(result):
             # For each busiest city, fetch its top 5 events
-            city_name = row.city.strip()
+            city_name = row.region.strip() if row.region else ""
+            if not city_name:
+                logger.warning(f"Skipping row {idx+1} with empty city name")
+                continue
             logger.debug(f"Processing city {idx+1}: '{city_name}' with total_attendance={row.total_attendance}")
 
             top_events_for_city = await self._get_top_events_for_city(
@@ -383,7 +392,7 @@ class EventsCacheService:
         # Cache the results
         try:
             logger.debug(f"Caching {len(busiest_cities_data)} busiest cities with key={cache_key} and TTL={self.busiest_cities_ttl}")
-            await redis_cache.redis_client.setex(
+            redis_cache.redis_client.setex(
                 cache_key,
                 self.busiest_cities_ttl,
                 json.dumps(busiest_cities_data, default=str)
@@ -410,32 +419,55 @@ class EventsCacheService:
             f"Fetching top {event_limit} events for city '{city_name}' "
             f"between {start_time} and {end_time}"
         )
-        city_expression = func.split_part(Event.location, ',', 1)
 
+        # Try multiple approaches to match the city
+        # First try exact city match
         query = (
             select(Event)
             .where(
-                city_expression == city_name,
+                Event.region == city_name,
                 Event.start >= start_time,
-                Event.start <= end_time,
-                Event.attendance.is_not(None) # Prioritize events with attendance
+                Event.start <= end_time
             )
-            .order_by(desc(Event.attendance))
+            .order_by(
+                desc(Event.attendance),  # Events with attendance first
+                desc(Event.start)        # Then by start time
+            )
             .limit(event_limit)
         )
         
         try:
             result = await session.execute(query)
             events = result.scalars().all()
-            logger.debug(
-                f"Found {len(events)} events for city '{city_name}' "
-                f"in the specified time window"
-            )
+            
+            # If no events found with exact city match, try location-based matching
+            if not events:
+                logger.debug(f"No events found for exact city '{city_name}', trying location-based matching")
+                location_query = (
+                    select(Event)
+                    .where(
+                        Event.location.ilike(f"%{city_name}%"),
+                        Event.start >= start_time,
+                        Event.start <= end_time
+                    )
+                    .order_by(
+                        desc(Event.attendance),
+                        desc(Event.start)
+                    )
+                    .limit(event_limit)
+                )
+                result = await session.execute(location_query)
+                events = result.scalars().all()
+                logger.debug(f"Found {len(events)} events using location-based matching for '{city_name}'")
+            
         except Exception as e:
-            logger.error(
-                f"Error fetching top events for city '{city_name}': {e}"
-            )
+            logger.error(f"Error fetching top events for city '{city_name}': {e}")
             events = []
+        
+        logger.debug(
+            f"Found {len(events)} events for city '{city_name}' "
+            f"in the specified time window"
+        )
         return [EventResponse.from_orm(event) for event in events]
 
     async def _get_event_counts_by_interval(
@@ -468,7 +500,7 @@ class EventsCacheService:
             query = (
                 select(func.count(Event.id))
                 .where(
-                    Event.city == city_name,
+                    Event.region == city_name,
                     Event.start >= interval_start,
                     Event.start < interval_end
                 )
