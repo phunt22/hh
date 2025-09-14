@@ -61,6 +61,11 @@ export interface BusiestCity {
   city: string;
   total_attendance: number;
   top_events: TopEvent[];
+  event_counts: {
+    interval_start: string;
+    interval_end: string;
+    event_count: number;
+  }[];
 }
 
 // TODO: remove this when api supports attendace | placeholder
