@@ -19,6 +19,7 @@ import { useFilters } from '../hooks/useFilters';
 import { useMapCategoryFilter } from '../hooks/useMapCategoryFilter';
 import { useCategories } from '../hooks/useCategories';
 import TimelineIcon from "./TimelineIcon";
+import TimelineSlider from "./TimelineSlider";
 
 export default function Globe({
   data,
@@ -35,17 +36,64 @@ export default function Globe({
   const [hoverInfo, setHoverInfo] = useState<HoverInfo>(null);
   const [panel, setPanel] = useState<{ locationLabel: string; events: EventPoint[]; isSearch?: boolean } | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isTimelineActive, setIsTimelineActive] = useState(false);
+  const [currentTimelineIndex, setCurrentTimelineIndex] = useState<number>(0);
+  const [timelineInterval, setTimelineInterval] = useState<number | null>(null);
 
   const initialData = useMemo(
     () => toFeatureCollection((data ?? []).slice(0, maxClientPoints)),
     [data, maxClientPoints]
   );
 
+  //const [timelineData, setTimelineData] = useState<EventPoint[]>([]);
+  
   const search = useSearch();
   const filters = useFilters();
   const { categories } = useCategories();
   
-  const displayedData: EventPoint[] = search.isSearchActive ? (search.searchResults ?? []) : (data ?? []);
+  
+  // Group events into 3-hour intervals between min and max (start/end) times.
+  const timelineGroupedData = useMemo(() => {
+    if (!Array.isArray(data) || data.length === 0) return [];
+
+    // Get all valid times (start and end) as timestamps
+    const times: number[] = [];
+    for (const event of data) {
+      if (event.start) times.push(new Date(event.start).getTime());
+      if (event.end) times.push(new Date(event.end).getTime());
+    }
+    if (times.length === 0) return [];
+
+    // Find min and max time
+    const minTime = Math.min(...times);
+    const maxTime = Math.max(...times);
+
+    // 3 hours in ms
+    const intervalMs = 3 * 60 * 60 * 1000;
+
+    // Build intervals: [ [start, end), ... ]
+    const intervals: Array<{ start: number, end: number }> = [];
+    for (let t = minTime; t < maxTime; t += intervalMs) {
+      intervals.push({ start: t, end: t + intervalMs });
+    }
+
+    // For each interval, collect events that are active (start <= interval.end && end >= interval.start)
+    // If event.end is missing, treat as a point event at start
+    const grouped: EventPoint[][] = intervals.map(({ start, end }) => {
+      return data.filter(event => {
+        const eventStart = event.start ? new Date(event.start).getTime() : null;
+        const eventEnd = event.end ? new Date(event.end).getTime() : eventStart;
+        if (eventStart === null) return false;
+        // Event is active if it overlaps with the interval
+        return eventStart < end && (eventEnd ?? eventStart) >= start;
+      });
+    });
+
+    return grouped;
+  }, [data]);
+
+  const displayedData: EventPoint[] = isTimelineActive ? (timelineGroupedData[currentTimelineIndex] || []) : 
+  search.isSearchActive ? (search.searchResults ?? []) : (data ?? []);
 
   const { containerRef, mapRef } = useMapInstance({
     mapStyle,
@@ -124,6 +172,43 @@ export default function Globe({
     }
   };
 
+ 
+
+  const toggleTimeline = () => {
+    if (isTimelineActive) {
+      // Deactivate timeline
+      setIsTimelineActive(false);
+      setCurrentTimelineIndex(0);
+      if (timelineInterval) {
+        clearInterval(timelineInterval);
+        setTimelineInterval(null);
+      }
+    } else {
+      // Activate timeline
+      setIsTimelineActive(true);
+      setPanel(null); // Close event panel if open
+      search.clearSearch(); // Clear search if active
+      setIsFilterOpen(false); // Close filter if open
+
+      setCurrentTimelineIndex(0);
+      const interval = setInterval(() => {
+        setCurrentTimelineIndex(prevIndex => {
+          // Ensure we do not go above the last index
+          if (!timelineGroupedData || timelineGroupedData.length === 0) return 0;
+          if (prevIndex >= timelineGroupedData.length - 1) {
+            clearInterval(interval);
+            setTimelineInterval(null);
+            return prevIndex;
+          }
+          return prevIndex + 1;
+        });
+      }, 1000); // Advance every 1 second (adjust as needed)
+      setTimelineInterval(interval as unknown as number);
+    }
+  };
+
+
+
 	return (
 		<div style={{ position: "relative", width: "100vw", height: "100vh", ...style }}>
 			<div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
@@ -135,11 +220,11 @@ export default function Globe({
 			<div style={{ position: "absolute", top: 12, right: panel ? 432 : 12, zIndex: 15 }}>
 				<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 					<SearchIcon onClick={search.openSearch} />
-					<FilterIcon 
+					<FilterIcon
 						active={filters.isActive}
 						onClick={() => setIsFilterOpen(true)}
 					/>
-          <TimelineIcon onClick={() => {}}/>
+          <TimelineIcon active={isTimelineActive} onClick={toggleTimeline}/>
 				</div>
 			</div>
 			
@@ -179,6 +264,17 @@ export default function Globe({
         onClearAll={filters.clearAll}
         categories={categories}
       />
+
+      {
+        isTimelineActive && (
+          <TimelineSlider
+            minIndex={0}
+            maxIndex={timelineGroupedData.length - 1}
+            value={currentTimelineIndex}
+            onChange={setCurrentTimelineIndex}
+          />
+        )
+      }
     </div>
   );
 }
