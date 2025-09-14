@@ -208,7 +208,6 @@ export default function Globe({
 const handleBusiestCitiesClick = async () => {
   if (busiestCities.length > 0) {
     // If we already have data, show it
-    console.log('Using cached cities:', busiestCities);
     const allEvents = busiestCities.flatMap((city: BusiestCity) => 
       city.top_events.map((event: any) => ({
         id: event.id,
@@ -232,21 +231,7 @@ const handleBusiestCitiesClick = async () => {
 
   setIsLoadingBusiestCities(true);
   try {
-    console.log('🔄 Fetching busiest cities...');
     const cities = await EventsAPI.getBusiestCities({ limit: 10, time_window_days: 7 });
-    
-    // DEBUG: Let's see what we actually got
-    console.log('✅ Raw API Response:', cities);
-    console.log('📊 Number of cities returned:', cities.length);
-    
-    // Log each city's details
-    cities.forEach((city, index) => {
-      console.log(`🏙️  City ${index + 1}: ${city.city}`);
-      console.log(`   Total attendance: ${city.total_attendance}`);
-      console.log(`   Events: ${city.top_events}`);
-      console.log(`   Event Count:`, city.event_counts);
-      console.log('---');
-    });
     
     setBusiestCities(cities);
     
@@ -266,18 +251,14 @@ const handleBusiestCitiesClick = async () => {
       }))
     );
     
-    console.log('🎯 Total events from all cities:', allEvents.length);
-    
     setPanel({ 
       locationLabel: `Busiest Cities (${cities.length} cities)`, 
       events: allEvents 
     });
     
-    // Fit map to show all busiest cities
     fitMapToResults(allEvents);
     
   } catch (error) {
-    console.error('❌ Error fetching busiest cities:', error);
     setToastMessage('Busiest cities feature is temporarily unavailable. The backend needs more event data with attendance information.');
     
     // Show a fallback with some sample data for demonstration
