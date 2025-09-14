@@ -179,7 +179,7 @@ function setupPinLayer(map: MLMap) {
 				id: "events-pins",
 				type: "symbol",
 				source: "events",
-				minzoom: 4,
+				minzoom: 6,
 				layout: {
 					"icon-image": ["concat", "pin-", ["get", "category"]],
 					"icon-size": [
