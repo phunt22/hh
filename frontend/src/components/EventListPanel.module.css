@@ -1,9 +1,9 @@
 .panel {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 0px;
+  right: 0px;
   height: auto;
-  max-height: calc(100vh - 24px);
+  max-height: 100vh;
   width: 480px;
   background: transparent;
   color: #fff;
@@ -13,8 +13,8 @@
   touch-action: pan-y;
   overscroll-behavior: contain;
   pointer-events: auto;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px 0 0 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 0 0 0 6px;
   backdrop-filter: blur(8px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
   animation: panelIn 200ms ease-out;
@@ -55,7 +55,7 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   font-weight: 600;
   background: linear-gradient(180deg, rgba(22, 22, 26, 0.95) 0%, rgba(18, 18, 22, 0.85) 100%);
-  border-radius: 12px 0 0 0; 
+  /* border-radius: 12px 0 0 0;  */
 }
 
 .headerTitle {
@@ -69,6 +69,8 @@
 }
 
 .listWrapper {
+  display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   min-height: 0; 
   overflow: hidden;
@@ -86,11 +88,17 @@
   gap: 14px;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+}
+
+.list::-webkit-scrollbar { /* Chrome/Safari */
+  width: 0px;
+  height: 0px;
 }
 
 .closeBtn {
-  width: 36px;
-  height: 36px;
+  width: 46px;
+  height: 46px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
@@ -99,38 +107,29 @@
   font-size: 18px;
   -webkit-tap-highlight-color: rgba(255, 255, 255, 0.35);
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
+  background: rgba(17, 17, 17, 0.98); /* match EventCard background */
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.14); /* match EventCard border */
 }
 
 
 .closeBtn:hover {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.3);
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  background: rgba(17, 17, 17, 1);
+  border-color: #fff;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
 }
 
 .closeBtn:focus { outline: none; }
 .closeBtn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
 }
 
 .closeBtn:active {
   transform: scale(0.96);
 }
 
-.closeBtnDanger {
-  border-color: rgba(255, 77, 77, 0.7);
-  box-shadow: 0 0 0 0 rgba(255, 77, 77, 0.0);
-}
-
-.closeBtnDanger:hover {
-  background: rgba(255, 77, 77, 0.15);
-  border-color: rgba(255, 77, 77, 0.95);
-}
-
-.closeBtnDanger:focus-visible {
-  box-shadow: 0 0 0 2px rgba(255, 77, 77, 0.85);
-}
+/* removed danger variant to unify with left buttons */
 
 .empty {
   color: #bbb;

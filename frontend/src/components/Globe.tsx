@@ -35,6 +35,7 @@ export default function Globe({
   const [hoverInfo, setHoverInfo] = useState<HoverInfo>(null);
   const [panel, setPanel] = useState<{ locationLabel: string; events: EventPoint[]; isSearch?: boolean } | null>(null);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isPanelClosing, setIsPanelClosing] = useState(false);
   const [busiestCities, setBusiestCities] = useState<BusiestCity[]>([]);
   const [isLoadingBusiestCities, setIsLoadingBusiestCities] = useState(false);
 
@@ -312,8 +313,8 @@ const handleBusiestCitiesClick = async () => {
 				<Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
 			)}
 
-			<div style={{ position: "absolute", top: 12, right: panel ? 504 : 12, zIndex: 15 }}>
-				<div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 15 }}>
+			<div style={{ position: "absolute", top: 12, marginTop: 3, right: panel ? (isPanelClosing ? 12 : 504) : 12, zIndex: 15, transition: 'right 180ms ease, transform 180ms ease', transform: isPanelClosing ? 'translateX(16px) scale(0.98)' : 'translateX(0) scale(1)' }}>
+				<div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 0 }}>
 					<SearchIcon onClick={search.openSearch} />
 					<FilterIcon 
 						active={filters.isActive}
@@ -336,6 +337,7 @@ const handleBusiestCitiesClick = async () => {
           events={panel.events}
           isSearchResults={panel.isSearch === true}
           onEventClick={handleEventClick}
+          onClosingChange={setIsPanelClosing}
           onClose={() => {
             if (panel?.isSearch) {
               search.clearSearch();
