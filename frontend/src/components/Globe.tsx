@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { GlobeProps } from '../types';
 import { toFeatureCollection } from '../utils/mapUtils';
@@ -41,6 +41,8 @@ export default function Globe({
   const [timelineInterval, setTimelineInterval] = useState<number | null>(null);
   const [busiestCities, setBusiestCities] = useState<BusiestCity[]>([]);
   const [isLoadingBusiestCities, setIsLoadingBusiestCities] = useState(false);
+
+  const timelineIntervalRef = useRef<number | null>(null);
 
   const initialData = useMemo(
     () => toFeatureCollection((data ?? []).slice(0, maxClientPoints)),
@@ -90,7 +92,6 @@ export default function Globe({
         return eventStart < end && (eventEnd ?? eventStart) >= start;
       });
     });
-
     return grouped;
   }, [data]);
 
@@ -176,36 +177,35 @@ export default function Globe({
 
   const toggleTimeline = () => {
     if (isTimelineActive) {
-      // Deactivate timeline
+      // Stop
       setIsTimelineActive(false);
       setCurrentTimelineIndex(0);
-      if (timelineInterval) {
-        clearInterval(timelineInterval);
-        setTimelineInterval(null);
+      if (timelineIntervalRef.current) {
+        clearInterval(timelineIntervalRef.current);
+        timelineIntervalRef.current = null;
       }
     } else {
-      // Activate timeline
+      // Start
       setIsTimelineActive(true);
-      setPanel(null); // Close event panel if open
-      search.clearSearch(); // Clear search if active
-      setIsFilterOpen(false); // Close filter if open
-
+      setPanel(null);
+      search.clearSearch();
+      setIsFilterOpen(false);
+  
       setCurrentTimelineIndex(0);
-      const interval = setInterval(() => {
+      timelineIntervalRef.current = window.setInterval(() => {
         setCurrentTimelineIndex(prevIndex => {
-          // Ensure we do not go above the last index
           if (!timelineGroupedData || timelineGroupedData.length === 0) return 0;
           if (prevIndex >= timelineGroupedData.length - 1) {
-            clearInterval(interval);
-            setTimelineInterval(null);
+            clearInterval(timelineIntervalRef.current!);
+            timelineIntervalRef.current = null;
             return prevIndex;
           }
           return prevIndex + 1;
         });
-      }, 1000); // Advance every 1 second (adjust as needed)
-      setTimelineInterval(interval as unknown as number);
+      }, 1000);
     }
   };
+  
 
 
 
