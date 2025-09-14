@@ -27,7 +27,6 @@ function App() {
       data={events ?? []}
       mapStyle={HYBRID}
       onViewportQuery={handleViewportQuery}
-      startAtUserLocation
     />
   )
 }
