@@ -208,85 +208,7 @@ export default function Globe({
 
 
 
-  const handleBusiestCitiesClick = async () => {
-    if (busiestCities.length > 0) {
-      // If we already have data, show it
-      const allEvents = busiestCities.flatMap((city: BusiestCity) => 
-        city.top_events.map((event: any) => ({
-          id: event.id,
-          title: event.title,
-          lat: event.latitude || 0,
-          lng: event.longitude || 0,
-          description: event.description,
-          attendance: event.attendance || 0,
-          start: event.start,
-          end: event.end,
-          category: event.category,
-          location: event.location,
-        }))
-      );
-      setPanel({ 
-        locationLabel: `Busiest Cities (${busiestCities.length} cities)`, 
-        events: allEvents 
-      });
-      return;
-    }
-
-  //   setIsLoadingBusiestCities(true);
-  //   try {
-  //     const cities = await EventsAPI.getBusiestCities({ limit: 10, time_window_days: 7 });
-  //     setBusiestCities(cities);
-      
-  //     // Convert to EventPoint format for display
-  //     const allEvents = cities.flatMap((city: BusiestCity) => 
-  //       city.top_events.map((event: any) => ({
-  //         id: event.id,
-  //         title: event.title,
-  //         lat: event.latitude || 0,
-  //         lng: event.longitude || 0,
-  //         description: event.description,
-  //         attendance: event.attendance || 0,
-  //         start: event.start,
-  //         end: event.end,
-  //         category: event.category,
-  //         location: event.location,
-  //       }))
-  //     );
-      
-  //     setPanel({ 
-  //       locationLabel: `Busiest Cities (${cities.length} cities)`, 
-  //       events: allEvents 
-  //     });
-      
-  //     // Fit map to show all busiest cities
-  //     fitMapToResults(allEvents);
-      
-  //   } catch (error) {
-  //     setToastMessage('Busiest cities feature is temporarily unavailable. The backend needs more event data with attendance information.');
-  //     console.error('Error fetching busiest cities:', error);
-      
-  //     // Show a fallback with some sample data for demonstration
-  //     const fallbackEvents = (data ?? []).slice(0, 10).map(event => ({
-  //       id: event.id,
-  //       title: event.title,
-  //       lat: event.lat,
-  //       lng: event.lng,
-  //       description: event.description,
-  //       attendance: event.attendance,
-  //       start: event.start,
-  //       end: event.end,
-  //       category: event.category,
-  //       location: event.location,
-  //     }));
-      
-  //     setPanel({ 
-  //       locationLabel: 'Sample Events (Busiest Cities feature coming soon)', 
-  //       events: fallbackEvents 
-  //     });
-  //   } finally {
-  //     setIsLoadingBusiestCities(false);
-  //   }
-  // };
+  
 
 	
   // Update your handleBusiestCitiesClick function in Globe.tsx
@@ -439,4 +361,4 @@ const handleBusiestCitiesClick = async () => {
       }
     </div>
   );
-};
+}
