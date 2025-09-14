@@ -72,8 +72,8 @@ export default function Globe({
     const minTime = Math.min(...times);
     const maxTime = Math.max(...times);
 
-    // 3 hours in ms
-    const intervalMs = 3 * 60 * 60 * 1000;
+    // 30 minutes in ms
+    const intervalMs = 15 * 60 * 1000;
 
     // Build intervals: [ [start, end), ... ]
     const intervals: Array<{ start: number, end: number }> = [];
