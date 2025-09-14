@@ -1,0 +1,58 @@
+.microphoneIcon {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(17, 17, 17, 0.96);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  font-size: 18px;
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.35);
+  transition: all 0.15s ease;
+}
+
+.microphoneIcon:hover:not(:disabled) {
+  background: rgba(17, 17, 17, 1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.microphoneIcon:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.microphoneIcon.recording {
+  background: rgba(220, 38, 38, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
+  }
+}
+
+.microphoneIcon:focus { 
+  outline: none; 
+}
+
+.microphoneIcon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+}
+
+.microphoneIcon:active:not(:disabled) {
+  transform: scale(0.96);
+}

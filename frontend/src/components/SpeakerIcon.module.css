@@ -1,0 +1,57 @@
+.speakerIcon {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(17, 17, 17, 0.96);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  font-size: 18px;
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.35);
+  transition: all 0.15s ease;
+}
+
+.speakerIcon:hover:not(:disabled) {
+  background: rgba(17, 17, 17, 1);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.speakerIcon:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.speakerIcon.dictating {
+  background: rgba(34, 197, 94, 0.9);
+  border-color: rgba(255, 255, 255, 0.3);
+  animation: typing 1.5s ease-in-out infinite;
+}
+
+@keyframes typing {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.8;
+  }
+}
+
+.speakerIcon:focus { 
+  outline: none; 
+}
+
+.speakerIcon:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+}
+
+.speakerIcon:active:not(:disabled) {
+  transform: scale(0.96);
+}

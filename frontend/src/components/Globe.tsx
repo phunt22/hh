@@ -4,20 +4,21 @@ import type { GlobeProps } from '../types';
 import { toFeatureCollection } from '../utils/mapUtils';
 import { DEFAULT_STYLE, DEFAULT_VIEW } from '../constants/mapConstants';
 import { useMapInstance } from '../hooks/useMapInstance';
-import { useMapViewport, useMapControls } from '../hooks/useMapViewport';
+import { useMapViewport } from '../hooks/useMapViewport';
 import { useSearch } from '../hooks/useSearch';
 import type { EventPoint } from '../types';
 import Toast from './Toast';
-import Controls from './Controls';
 import HoverModal, { type HoverInfo } from "./HoverModal";
 import EventListPanel from "./EventListPanel";
 import SearchIcon from './SearchIcon';
 import SearchOverlay from './SearchOverlay';
 import FilterIcon from './FilterIcon';
 import FilterOverlay from './FilterOverlay';
+import TrendIcon from './TrendIcon';
 import { useFilters } from '../hooks/useFilters';
 import { useMapCategoryFilter } from '../hooks/useMapCategoryFilter';
 import { useCategories } from '../hooks/useCategories';
+import { EventsAPI, type BusiestCity } from '../services/api';
 import TimelineIcon from "./TimelineIcon";
 import TimelineSlider from "./TimelineSlider";
 
@@ -28,7 +29,6 @@ export default function Globe({
   initialView = DEFAULT_VIEW,
   maxClientPoints = 40000,
   fetchDebounceMs = 220,
-  showControls = false,
   style,
   startAtUserLocation = false
 }: GlobeProps) {
@@ -39,6 +39,8 @@ export default function Globe({
   const [isTimelineActive, setIsTimelineActive] = useState(false);
   const [currentTimelineIndex, setCurrentTimelineIndex] = useState<number>(0);
   const [timelineInterval, setTimelineInterval] = useState<number | null>(null);
+  const [busiestCities, setBusiestCities] = useState<BusiestCity[]>([]);
+  const [isLoadingBusiestCities, setIsLoadingBusiestCities] = useState(false);
 
   const initialData = useMemo(
     () => toFeatureCollection((data ?? []).slice(0, maxClientPoints)),
@@ -116,8 +118,6 @@ export default function Globe({
     maxClientPoints,
     data: displayedData
   });
-
-	const { doZoom, reset } = useMapControls(mapRef.current, initialView);
 
   const fitMapToResults = (results: EventPoint[]) => {
     const map = mapRef.current;
@@ -209,6 +209,86 @@ export default function Globe({
 
 
 
+  const handleBusiestCitiesClick = async () => {
+    if (busiestCities.length > 0) {
+      // If we already have data, show it
+      const allEvents = busiestCities.flatMap((city: BusiestCity) => 
+        city.top_events.map((event: any) => ({
+          id: event.id,
+          title: event.title,
+          lat: event.latitude || 0,
+          lng: event.longitude || 0,
+          description: event.description,
+          attendance: event.attendance || 0,
+          start: event.start,
+          end: event.end,
+          category: event.category,
+          location: event.location,
+        }))
+      );
+      setPanel({ 
+        locationLabel: `Busiest Cities (${busiestCities.length} cities)`, 
+        events: allEvents 
+      });
+      return;
+    }
+
+    setIsLoadingBusiestCities(true);
+    try {
+      const cities = await EventsAPI.getBusiestCities({ limit: 10, time_window_days: 7 });
+      setBusiestCities(cities);
+      
+      // Convert to EventPoint format for display
+      const allEvents = cities.flatMap((city: BusiestCity) => 
+        city.top_events.map((event: any) => ({
+          id: event.id,
+          title: event.title,
+          lat: event.latitude || 0,
+          lng: event.longitude || 0,
+          description: event.description,
+          attendance: event.attendance || 0,
+          start: event.start,
+          end: event.end,
+          category: event.category,
+          location: event.location,
+        }))
+      );
+      
+      setPanel({ 
+        locationLabel: `Busiest Cities (${cities.length} cities)`, 
+        events: allEvents 
+      });
+      
+      // Fit map to show all busiest cities
+      fitMapToResults(allEvents);
+      
+    } catch (error) {
+      setToastMessage('Busiest cities feature is temporarily unavailable. The backend needs more event data with attendance information.');
+      console.error('Error fetching busiest cities:', error);
+      
+      // Show a fallback with some sample data for demonstration
+      const fallbackEvents = (data ?? []).slice(0, 10).map(event => ({
+        id: event.id,
+        title: event.title,
+        lat: event.lat,
+        lng: event.lng,
+        description: event.description,
+        attendance: event.attendance,
+        start: event.start,
+        end: event.end,
+        category: event.category,
+        location: event.location,
+      }));
+      
+      setPanel({ 
+        locationLabel: 'Sample Events (Busiest Cities feature coming soon)', 
+        events: fallbackEvents 
+      });
+    } finally {
+      setIsLoadingBusiestCities(false);
+    }
+  };
+
 	return (
 		<div style={{ position: "relative", width: "100vw", height: "100vh", ...style }}>
 			<div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
@@ -217,21 +297,22 @@ export default function Globe({
 				<Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
 			)}
 
-			<div style={{ position: "absolute", top: 12, right: panel ? 432 : 12, zIndex: 15 }}>
-				<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+			<div style={{ position: "absolute", top: 12, right: panel ? 504 : 12, zIndex: 15 }}>
+				<div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 15 }}>
 					<SearchIcon onClick={search.openSearch} />
 					<FilterIcon
 						active={filters.isActive}
 						onClick={() => setIsFilterOpen(true)}
 					/>
           <TimelineIcon active={isTimelineActive} onClick={toggleTimeline}/>
+					<TrendIcon 
+						onClick={handleBusiestCitiesClick}
+						disabled={isLoadingBusiestCities}
+						title={isLoadingBusiestCities ? 'Loading...' : 'Show Busiest Cities (Demo Mode)'}
+					/>
 				</div>
 			</div>
 			
-			{showControls && (
-				<Controls onZoomIn={() => doZoom(2)} onZoomOut={() => doZoom(0.5)} onReset={reset} />
-			)}
-
       <HoverModal info={hoverInfo} />
 
       {panel && (
