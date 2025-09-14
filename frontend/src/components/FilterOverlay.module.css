@@ -36,6 +36,9 @@
   animation: slideIn 200ms ease-out;
 }
 
+.container:focus { outline: none; }
+.container:focus-visible { outline: none; }
+
 .containerClosing {
   animation: slideOut 160ms ease-in forwards;
 }
