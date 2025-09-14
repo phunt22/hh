@@ -21,6 +21,7 @@ import { useCategories } from '../hooks/useCategories';
 import { EventsAPI, type BusiestCity } from '../services/api';
 import TimelineIcon from "./TimelineIcon";
 import TimelineSlider from "./TimelineSlider";
+import { AudioPlayerWithVisualizer } from "./AudioPlayer";
 
 export default function Globe({
   data,
@@ -37,7 +38,6 @@ export default function Globe({
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isTimelineActive, setIsTimelineActive] = useState(false);
   const [currentTimelineIndex, setCurrentTimelineIndex] = useState<number>(0);
-  const [timelineInterval, setTimelineInterval] = useState<number | null>(null);
   const [isPanelClosing, setIsPanelClosing] = useState(false);
   const [busiestCities, setBusiestCities] = useState<BusiestCity[]>([]);
   const [isLoadingBusiestCities, setIsLoadingBusiestCities] = useState(false);
@@ -371,6 +371,12 @@ export default function Globe({
             value={currentTimelineIndex}
             onChange={setCurrentTimelineIndex}
           />
+        )
+      }
+
+      {
+        search.isSearchActive && search.audioUrl && (
+          <AudioPlayerWithVisualizer audioDataUrl={search.audioUrl} />
         )
       }
     </div>
