@@ -25,9 +25,14 @@ export default function FilterOverlay({
   
   // close button not focused immediately
   const closeRef = useRef<HTMLButtonElement | null>(null)
+  const containerRef = useRef<HTMLDivElement | null>(null)
   useEffect(() => {
     if (isOpen) {
-      const t = setTimeout(() => closeRef.current?.blur(), 0);
+      const t = setTimeout(() => {
+        closeRef.current?.blur();
+        // Move focus to dialog container to prevent autofocusing the close button
+        containerRef.current?.focus();
+      }, 0);
       return () => clearTimeout(t);
     }
   }, [isOpen]);
@@ -45,10 +50,17 @@ export default function FilterOverlay({
 
   return (
     <div className={styles.backdrop} onClick={(e) => e.target === e.currentTarget && onClose()}>
-      <div className={styles.container} role="dialog" aria-modal="true" aria-label="Filter events by category">
+      <div
+        ref={containerRef}
+        className={styles.container}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Filter events by category"
+        tabIndex={-1}
+      >
         <div className={styles.header}>
           <div className={styles.title}>Filter by Category</div>
-          <button className={styles.closeButton} onClick={onClose} aria-label="Close">
+          <button ref={closeRef} className={styles.closeButton} onClick={onClose} aria-label="Close">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
