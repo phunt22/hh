@@ -4,11 +4,10 @@ import type { GlobeProps } from '../types';
 import { toFeatureCollection } from '../utils/mapUtils';
 import { DEFAULT_STYLE, DEFAULT_VIEW } from '../constants/mapConstants';
 import { useMapInstance } from '../hooks/useMapInstance';
-import { useMapViewport, useMapControls } from '../hooks/useMapViewport';
+import { useMapViewport } from '../hooks/useMapViewport';
 import { useSearch } from '../hooks/useSearch';
 import type { EventPoint } from '../types';
 import Toast from './Toast';
-import Controls from './Controls';
 import HoverModal, { type HoverInfo } from "./HoverModal";
 import EventListPanel from "./EventListPanel";
 import SearchIcon from './SearchIcon';
@@ -29,7 +28,6 @@ export default function Globe({
   initialView = DEFAULT_VIEW,
   maxClientPoints = 40000,
   fetchDebounceMs = 220,
-  showControls = false,
   style,
   startAtUserLocation = false
 }: GlobeProps) {
@@ -72,8 +70,6 @@ export default function Globe({
     maxClientPoints,
     data: displayedData
   });
-
-	const { doZoom, reset } = useMapControls(mapRef.current, initialView);
 
   const fitMapToResults = (results: EventPoint[]) => {
     const map = mapRef.current;
@@ -216,8 +212,8 @@ export default function Globe({
 				<Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
 			)}
 
-			<div style={{ position: "absolute", top: 12, right: panel ? 432 : 12, zIndex: 15 }}>
-				<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+			<div style={{ position: "absolute", top: 12, right: panel ? 504 : 12, zIndex: 15 }}>
+				<div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 15 }}>
 					<SearchIcon onClick={search.openSearch} />
 					<FilterIcon 
 						active={filters.isActive}
@@ -232,10 +228,6 @@ export default function Globe({
 				</div>
 			</div>
 			
-			{showControls && (
-				<Controls onZoomIn={() => doZoom(2)} onZoomOut={() => doZoom(0.5)} onReset={reset} />
-			)}
-
       <HoverModal info={hoverInfo} />
 
       {panel && (

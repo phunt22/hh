@@ -1,6 +1,7 @@
 import type { EventPoint } from "../types";
 import styles from "./EventListPanel.module.css";
 import EventCard from "./EventCard";
+import { useEffect, useRef, useState } from "react";
 
 export type EventListPanelProps = {
   locationLabel: string;
@@ -11,9 +12,26 @@ export type EventListPanelProps = {
 };
 
 export default function EventListPanel({ locationLabel, events, onClose, onEventClick, isSearchResults }: EventListPanelProps) {
+  const [isClosing, setIsClosing] = useState(false);
+  const closeRef = useRef<HTMLButtonElement | null>(null);
+
+  useEffect(() => {
+    const t = setTimeout(() => closeRef.current?.blur(), 0);
+    return () => clearTimeout(t);
+  }, []);
+
+  const handleClose = () => {
+    if (isClosing) return;
+    setIsClosing(true);
+
+    setTimeout(() => {
+      onClose();
+    }, 180);
+  };
+
   return (
     <div
-      className={styles.panel}
+      className={`${styles.panel} ${isClosing ? styles.closing : ""}`}
       onWheelCapture={(e) => e.stopPropagation()}
       onTouchMoveCapture={(e) => e.stopPropagation()}
     >
@@ -22,7 +40,8 @@ export default function EventListPanel({ locationLabel, events, onClose, onEvent
           {locationLabel || "Location"}
         </div>
         <button 
-          onClick={onClose} 
+          ref={closeRef}
+          onClick={handleClose}
           aria-label="Close" 
           className={`${styles.closeBtn} ${isSearchResults ? styles.closeBtnDanger : ""}`}
           title={isSearchResults ? "Clear search results" : "Close"}
