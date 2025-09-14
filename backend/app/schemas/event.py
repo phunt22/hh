@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List
+from typing import Any, Dict, Optional, List
 from datetime import datetime
 
 
@@ -53,7 +53,7 @@ class SimilaritySearchRequest(BaseModel):
 
 class SimilaritySearchResponse(BaseModel):
     query_event: Optional[EventResponse] = None
-    similar_events: List[SimilarEvent]
+    similar_events: List[Dict[str, Any]]
     total_found: int
 
 

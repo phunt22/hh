@@ -37,6 +37,7 @@ class Event(SQLModel, table=True):
     
     # Related events (comma-separated IDs for simplicity)
     related_event_ids: Optional[str] = Field(default="")
+    indexed: bool = Field(default=False, nullable=True)
     
     class Config:
         arbitrary_types_allowed = True

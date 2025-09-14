@@ -7,7 +7,9 @@ from app.models.event import Event
 from app.services.embedding import embedding_service
 from app.services.predicthq import predicthq_service
 from app.core.config import settings
+from app.services.pinecone_service import pinecone_service
 import logging
+
 
 logger = logging.getLogger(__name__)
 
@@ -95,6 +97,8 @@ class BatchProcessor:
             # Prepare events for database operations
             events_to_create = []
             events_to_update = []
+
+            events_for_pinecone = []
             
             for parsed_event, embedding in zip(parsed_events, embeddings):
                 try:
@@ -110,8 +114,9 @@ class BatchProcessor:
                         events_to_update.append(existing_event)
                     else:
                         # Create new event
-                        event = Event(**event_data)
+                        event = Event(**event_data, indexed=True)
                         events_to_create.append(event)
+                        events_for_pinecone.append(event_data)
                     
                     stats["processed"] += 1
                     
@@ -123,6 +128,7 @@ class BatchProcessor:
             # Database operations
             if events_to_create:
                 session.add_all(events_to_create)
+                await pinecone_service.batch_upsert_events(events_for_pinecone)
                 stats["created"] = len(events_to_create)
             
             if events_to_update:
@@ -233,6 +239,91 @@ class BatchProcessor:
                 "events_updated": 0,
                 "processing_time": processing_time
             }
+
+    async def sync_events_to_pinecone(
+        self,
+        session: AsyncSession,
+        event_ids: Optional[List[str]] = None,
+        batch_size: int = 100
+    ) -> int:
+        """Sync events to Pinecone vector database"""
+        try:
+            # Get events with embeddings
+            from sqlalchemy import or_
+            query = (
+                select(Event)
+                .where(
+                    Event.embeddings.is_not(None),
+                    or_(Event.indexed == False, Event.indexed.is_(None))
+                )
+                .limit(batch_size)
+            )
+            if event_ids:
+                query = query.where(Event.id.in_(event_ids))
+            
+            result = await session.execute(query)
+            events = result.scalars().all()
+            
+            if not events:
+                logger.info("No events with embeddings found to sync to Pinecone")
+                return 0
+            
+            # Prepare data for Pinecone
+            events_data = []
+            for event in events:
+                embedding = event.embeddings
+                if embedding is None or (isinstance(embedding, list) and all(v == 0.0 for v in embedding)):
+                    # Use embedding_service to generate embedding from title and description
+                    title = event.title or ""
+                    description = event.description or ""
+                    # Import here to avoid circular import
+                    from app.services.embedding import embedding_service
+                    event_text = embedding_service.prepare_event_text(title, description)
+                    embedding = await embedding_service.generate_embedding(event_text)
+                
+                event_data = {
+                    'id': str(event.id) if event.id is not None else '',
+                    'embedding': embedding,
+                    'title': str(event.title) if event.title is not None else '',
+                    'description': str(event.description) if event.description is not None else '',
+                    'category': str(event.category) if event.category is not None else '',
+                    'longitude': str(event.longitude) if event.longitude is not None else '',
+                    'latitude': str(event.latitude) if event.latitude is not None else '',
+                    'start': event.start.isoformat() if event.start else '',
+                    'end': event.end.isoformat() if event.end else '',
+                    'city': str(event.city) if event.city is not None else '',
+                    'region': str(event.region) if event.region is not None else '',
+                    'location': str(event.location) if event.location is not None else '',
+                    'attendance': str(event.attendance) if event.attendance is not None else '',
+                    'spend_amount': str(event.spend_amount) if event.spend_amount is not None else '',
+                    'predicthq_updated': event.predicthq_updated.isoformat() if event.predicthq_updated else '',
+                    'created_at': event.created_at.isoformat() if event.created_at else '',
+                    'updated_at': event.updated_at.isoformat() if event.updated_at else '',
+                }
+                events_data.append(event_data)
+            
+            # Batch upsert to Pinecone
+            synced_count = await pinecone_service.batch_upsert_events(events_data)
+
+            # Update events' indexed column to True for successfully synced events
+            if synced_count > 0:
+                from sqlalchemy import update
+                event_ids_to_update = [event['id'] for event in events_data if event.get('id')]
+                if event_ids_to_update:
+                    await session.execute(
+                        update(Event)
+                        .where(Event.id.in_(event_ids_to_update))
+                        .values(indexed=True)
+                    )
+                    await session.commit()
+            
+            
+            logger.info(f"Synced {synced_count} events to Pinecone")
+            return synced_count
+            
+        except Exception as e:
+            logger.error(f"Error syncing events to Pinecone: {e}")
+            return 0
 
 
 # Global instance

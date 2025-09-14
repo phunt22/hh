@@ -8,7 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import create_db_and_tables, get_session
 from app.api.routes import etl, events
 from app.services.etl_scheduler import etl_scheduler
-from app.schemas.event import BusiestCity
+from app.services.pinecone_scheduler import pinecone_sync_scheduler
+
 
 # Configure logging
 logging.basicConfig(
@@ -28,6 +29,8 @@ async def lifespan(app: FastAPI):
         logger.info("Database tables created successfully")
 
         await etl_scheduler.start_hourly_etl()
+
+        await pinecone_sync_scheduler.start_periodic_sync(10)
         logger.info("✅ Hourly ETL scheduler started")
     except Exception as e:
         logger.error(f"Error creating database tables: {e}")
@@ -103,5 +106,5 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=True,
-        log_level="info"
+        log_level="debug"
     )

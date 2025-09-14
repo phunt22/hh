@@ -15,6 +15,10 @@ class Settings(BaseSettings):
     embedding_model: str = "gemini-embedding-001"
     embedding_dimension: int = 1536
     redis_cache_ttl_seconds: int = 86400
+    pinecone_api_key: str
+    pinecone_environment: str = "aws-starter"  # or your environment
+    pinecone_index_name: str = "hophacks-2025"
+    pinecone_dimension: int = 1536  # OpenAI embedding dimension
     
     class Config:
         env_file = ".env"

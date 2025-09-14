@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional, Dict, Any
+from typing import List, Optional, Dict, Any
 from app.core.database import get_session
 from app.schemas.event import ETLStatus
 from app.utils.batch_processing import batch_processor
@@ -147,6 +147,63 @@ async def calculate_similarities(
         "message": f"Similarity calculation started with job ID: {job_id}",
         "job_id": job_id
     }
+
+@router.post("/sync-to-pinecone")
+async def sync_events_to_pinecone(
+    background_tasks: BackgroundTasks,
+    session: AsyncSession = Depends(get_session),
+    event_ids: Optional[List[str]] = None,
+    batch_size: int = Query(100, description="Batch size for syncing")
+):
+    """Sync events with embeddings to Pinecone vector database"""
+    
+    import uuid
+    job_id = str(uuid.uuid4())
+    
+    etl_status_store[job_id] = {
+        "status": "running",
+        "message": "Syncing events to Pinecone",
+        "events_processed": 0,
+        "job_id": job_id
+    }
+    
+    background_tasks.add_task(
+        sync_to_pinecone_task,
+        job_id,
+        event_ids,
+        batch_size
+    )
+    
+    return {
+        "status": "running",
+        "message": f"Pinecone sync started with job ID: {job_id}",
+        "job_id": job_id
+    }
+
+async def sync_to_pinecone_task(job_id: str, event_ids: Optional[List[str]], batch_size: int):
+    """Background task to sync events to Pinecone"""
+    try:
+        from app.core.database import AsyncSessionLocal
+        
+        async with AsyncSessionLocal() as session:
+            synced_count = await batch_processor.sync_events_to_pinecone(
+                session=session,
+                event_ids=event_ids,
+                batch_size=batch_size
+            )
+            
+            etl_status_store[job_id].update({
+                "status": "completed",
+                "message": f"Synced {synced_count} events to Pinecone",
+                "events_processed": synced_count
+            })
+            
+    except Exception as e:
+        logger.error(f"Pinecone sync error for job {job_id}: {e}")
+        etl_status_store[job_id].update({
+            "status": "error",
+            "message": f"Pinecone sync failed: {str(e)}"
+        })
 
 
 async def run_etl_pipeline(
