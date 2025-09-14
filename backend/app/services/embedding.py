@@ -40,7 +40,20 @@ class EmbeddingService:
                 ),
             )
             logger.info("Received embedding response from OpenAI.")
-            return response.embeddings[0].values
+            
+            # Validate embedding values
+            embedding_values = response.embeddings[0].values
+            if not embedding_values or len(embedding_values) == 0:
+                logger.warning("Received empty embedding, returning zero vector")
+                return [0.0] * self.dimension
+            
+            # Check for NaN or infinite values
+            embedding_array = np.array(embedding_values)
+            if np.any(np.isnan(embedding_array)) or np.any(np.isinf(embedding_array)):
+                logger.warning("Received embedding with NaN or infinite values, returning zero vector")
+                return [0.0] * self.dimension
+            
+            return embedding_values
         
         except Exception as e:
             logger.error(f"Error generating embedding: {e}", exc_info=True)
@@ -82,10 +95,24 @@ class EmbeddingService:
             )
             logger.info("Received batch embedding response from OpenAI.")
             
-            # Map results back to original order
+            # Map results back to original order with validation
             embeddings = [[0.0] * self.dimension] * len(texts)
             for i, valid_idx in enumerate(valid_indices):
-                embeddings[valid_idx] = response.embeddings[i].values
+                embedding_values = response.embeddings[i].values
+                
+                # Validate embedding values
+                if not embedding_values or len(embedding_values) == 0:
+                    logger.warning(f"Received empty embedding for index {valid_idx}, using zero vector")
+                    embeddings[valid_idx] = [0.0] * self.dimension
+                else:
+                    # Check for NaN or infinite values
+                    embedding_array = np.array(embedding_values)
+                    if np.any(np.isnan(embedding_array)) or np.any(np.isinf(embedding_array)):
+                        logger.warning(f"Received embedding with NaN/inf values for index {valid_idx}, using zero vector")
+                        embeddings[valid_idx] = [0.0] * self.dimension
+                    else:
+                        embeddings[valid_idx] = embedding_values
+                
                 logger.debug(f"Embedding for index {valid_idx} set.")
             
             return embeddings
@@ -149,6 +176,12 @@ class EmbeddingService:
                 return 0.0
             
             similarity = dot_product / (norm1 * norm2)
+            
+            # Handle NaN values that can occur in similarity calculations
+            if np.isnan(similarity):
+                logger.warning("NaN similarity calculated, returning 0.0")
+                return 0.0
+                
             logger.info(f"Cosine similarity calculated: {similarity}")
             return float(similarity)
         

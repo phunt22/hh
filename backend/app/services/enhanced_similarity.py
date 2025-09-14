@@ -71,38 +71,51 @@ class EnhancedSimilarityService:
         """Find similar events using pgvector cosine similarity"""
         
         try:
-            # Build the similarity query using pgvector
-            # Convert embedding to PostgreSQL array format
-            embedding_str = f"[{','.join(map(str, query_embedding))}]"
-            
-            # Base query with cosine similarity
-            similarity_expr = f"1 - (embeddings <=> '{embedding_str}'::vector)"
-            
-            query_parts = [
-                "SELECT *, ",
-                f"({similarity_expr}) as similarity ",
-                "FROM events ",
-                "WHERE embeddings IS NOT NULL "
-            ]
-            
-            # Add similarity threshold
-            query_parts.append(f"AND ({similarity_expr}) >= {min_similarity} ")
-            
-            # Exclude specific event if provided
+            # Convert list[float] into Postgres array literal
+            embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
+
+            sql = text("""
+                SELECT 
+                    id,
+                    title,
+                    description,
+                    category,
+                    longitude,
+                    latitude,
+                    embeddings,
+                    start,
+                    "end",
+                    city,
+                    region,
+                    location,
+                    attendance,
+                    spend_amount,
+                    predicthq_updated,
+                    created_at,
+                    updated_at,
+                    related_event_ids,
+                    1 - (embeddings <=> :embedding) AS similarity
+                FROM events
+                WHERE embeddings IS NOT NULL
+                AND 1 - (embeddings <=> :embedding) >= :min_similarity
+                {exclude_clause}
+                ORDER BY similarity DESC
+                LIMIT :limit
+            """.format(
+                exclude_clause="AND id != :exclude_event_id" if exclude_event_id else ""
+            ))
+
+            params = {
+                "embedding": embedding_str,
+                "limit": limit,
+                "min_similarity": min_similarity
+            }
             if exclude_event_id:
-                query_parts.append(f"AND id != '{exclude_event_id}' ")
-            
-            # Order by similarity and limit
-            query_parts.extend([
-                f"ORDER BY ({similarity_expr}) DESC ",
-                f"LIMIT {limit}"
-            ])
-            
-            full_query = "".join(query_parts)
-            
-            # Execute the query
-            result = await session.execute(text(full_query))
+                params["exclude_event_id"] = exclude_event_id
+
+            result = await session.execute(sql, params)
             rows = result.fetchall()
+
             
             # Convert results to Event objects with similarity scores
             similar_events = []
@@ -134,9 +147,7 @@ class EnhancedSimilarityService:
         except Exception as e:
             logger.error(f"Vector similarity search failed: {e}")
             # Fallback to manual similarity calculation
-            return await self._manual_similarity_search(
-                session, query_embedding, limit, min_similarity, exclude_event_id
-            )
+            return []
 
     async def _manual_similarity_search(
         self,
