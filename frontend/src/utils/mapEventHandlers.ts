@@ -61,7 +61,7 @@ export function setupMapEventHandlers(
 			const loc = (ff?.properties ?? {}).location;
 			return typeof loc === 'string' && loc.trim().length > 0;
 		});
-		const locationLabel = String((withLocation?.properties?.location as any) || fallbackLabel);
+		const locationLabel = String(withLocation.properties?.city || (withLocation?.properties?.location as any) || fallbackLabel);
 
 		// collect events overlapping locations		
 		const events: EventPoint[] = feats.map((f: any) => {
