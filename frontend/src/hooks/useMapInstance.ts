@@ -8,7 +8,6 @@ type UseMapInstanceProps = {
 	mapStyle: string;
 	initialView: { lon: number; lat: number; zoom: number; bearing?: number; pitch?: number };
 	initialData: GeoJSON.FeatureCollection;
-	startAtUserLocation: boolean;
 	onToast: (message: string) => void;
 	onHoverChange: (info: any) => void;
 	onPanelChange: (panel: any) => void;
@@ -19,8 +18,6 @@ export function useMapInstance({
 	mapStyle,
 	initialView,
 	initialData,
-	startAtUserLocation,
-	onToast,
 	onHoverChange,
 	onPanelChange,
 	data
@@ -59,10 +56,6 @@ export function useMapInstance({
 			setupMapLayers(map);
 
 			setupMapEventHandlers(map, onHoverChange, onPanelChange, data);
-
-			if (startAtUserLocation) {
-				handleUserLocation(map, initialView, onToast);
-			}
 		});
 
 		return () => {
@@ -72,59 +65,4 @@ export function useMapInstance({
 	}, []);
 
 	return { containerRef, mapRef };
-}
-
-function handleUserLocation(
-	map: MLMap, 
-	initialView: any, 
-	onToast: (message: string) => void
-) {
-	if (!navigator.geolocation) {
-		onToast("Geolocation not supported in this browser.");
-		return;
-	}
-
-	let resolved = false;
-	
-	const onSuccess = (pos: GeolocationPosition) => {
-		if (resolved) return;
-		resolved = true;
-		const { latitude, longitude } = pos.coords;
-		map.jumpTo({ center: [longitude, latitude], zoom: Math.max(10, initialView.zoom) });
-	};
-	
-	const onFinalError = (err: GeolocationPositionError) => {
-		if (resolved) return;
-		resolved = true;
-		const code = (err && (err as any).code) ?? 0;
-		if (code === 1) {
-			onToast("Location permission denied. Using default view.");
-		} else if (code === 3) {
-			onToast("Location timed out. Using default view.");
-		} else {
-			onToast("Couldn't access location. Using default view.");
-		}
-	};
-	
-	const tryCoarse = () => {
-		if (resolved) return;
-		navigator.geolocation.getCurrentPosition(
-			onSuccess,
-			onFinalError,
-			{ enableHighAccuracy: false, timeout: 8000, maximumAge: 600000 }
-		);
-	};
-	
-	navigator.geolocation.getCurrentPosition(
-		onSuccess,
-		(err) => {
-			const code = (err && (err as any).code) ?? 0;
-			if (code === 1) {
-				onFinalError(err);
-			} else {
-				tryCoarse();
-			}
-		},
-		{ enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 }
-	);
 }

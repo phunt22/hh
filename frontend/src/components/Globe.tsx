@@ -29,7 +29,6 @@ export default function Globe({
   maxClientPoints = 40000,
   fetchDebounceMs = 220,
   style,
-  startAtUserLocation = false
 }: GlobeProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [hoverInfo, setHoverInfo] = useState<HoverInfo>(null);
@@ -54,7 +53,6 @@ export default function Globe({
     mapStyle,
     initialView,
     initialData,
-    startAtUserLocation,
     onToast: setToastMessage,
     onHoverChange: setHoverInfo,
     onPanelChange: setPanel,

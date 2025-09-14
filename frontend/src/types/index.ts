@@ -40,9 +40,6 @@ export type GlobeProps = {
 
   /** Inline style for the container (defaults to full screen). */
   style?: React.CSSProperties;
-
-  /** If true, attempts to center map at user's geolocation on load. */
-  startAtUserLocation?: boolean;
 };
 
 export type MapViewport = {
