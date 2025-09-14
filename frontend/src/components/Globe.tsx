@@ -334,7 +334,7 @@ export default function Globe({
       {panel && (
         <>
           <EventListPanel
-            header={<BusiestCitiesChart busiestCities={busiestCities} />}
+            header={busiestCities.length > 0 && <BusiestCitiesChart busiestCities={busiestCities} />}
             locationLabel={panel.locationLabel}
             events={panel.events}
             isSearchResults={panel.isSearch === true}
