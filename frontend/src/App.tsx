@@ -9,16 +9,18 @@ const HYBRID = import.meta.env.VITE_MAPTILER_API_KEY
     : DEFAULT_STYLE;
 
 function App() {  
+  /*
   const handleViewportQuery = async (center: { lat: number; lng: number }, radiusKm: number) => {
     const rows = await EventsAPI.getEventsInViewport(center, radiusKm, 300);
 
     return rows;
   };
+  */
 
   const { data: events } = useQuery({
     queryKey: ["events"],
     queryFn: async () => {
-      return EventsAPI.getEvents();
+      return EventsAPI.getEvents({ limit: 3000 });
     }
   })
 
@@ -26,7 +28,7 @@ function App() {
     <Globe
       data={events ?? []}
       mapStyle={HYBRID}
-      onViewportQuery={handleViewportQuery}
+      //onViewportQuery={handleViewportQuery}
     />
   )
 }

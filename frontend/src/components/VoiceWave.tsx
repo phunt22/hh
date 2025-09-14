@@ -3,11 +3,11 @@ import styles from "./VoiceWave.module.css";
 
 type VoiceWaveProps = {
   isRecording: boolean;
-  audioContext?: AudioContext;
-  analyser?: AnalyserNode;
+  audioContext?: AudioContext | null;
+  analyser?: AnalyserNode | null;
 };
 
-export default function VoiceWave({ isRecording, audioContext, analyser }: VoiceWaveProps) {
+export default function VoiceWave({ isRecording, analyser }: VoiceWaveProps) {
   const [waveData, setWaveData] = useState<number[]>([]);
 
   useEffect(() => {

@@ -21,7 +21,7 @@ export default function SearchOverlay({ isOpen, onClose, onSearch }: SearchOverl
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyserRef = useRef<AnalyserNode | null>(null);
-  const recognitionRef = useRef<SpeechRecognition | null>(null);
+  const recognitionRef = useRef<any | null>(null);
 
   useEffect(() => {
     if (isOpen && inputRef.current) {

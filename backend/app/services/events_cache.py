@@ -40,7 +40,7 @@ class EventsCacheService:
             events = await redis_cache.get_cached_events(key)
             if events:
                 cached_events.extend(events)
-                
+
         if cached_events and len(cached_events) >= self.min_cache_threshold:
             logger.info(f"Using cache with {len(cached_events)} events")
             
@@ -65,7 +65,7 @@ class EventsCacheService:
             
             # Update cache with fresh data from DB
             if db_events:
-                await self._update_cache_from_db_events(cache_key, db_events)
+                await self._update_cache_from_db_events(cache_keys[0], db_events)
             
             return db_events
 

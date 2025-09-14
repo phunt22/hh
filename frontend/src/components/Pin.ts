@@ -1,12 +1,12 @@
 import type { Map as MLMap } from "maplibre-gl";
 import { getCategoryColor } from "../constants/categoryColors";
 
-type PinProps = {
-  color?: string;
-  size?: number;
-  style?: React.CSSProperties;
-  useEmoji?: boolean;
-};
+// type PinProps = {
+//   color?: string;
+//   size?: number;
+//   style?: React.CSSProperties;
+//   useEmoji?: boolean;
+// };
 
 // export default function Pin({ color = "#FF3B3B", size = 32, style, useEmoji = false }: PinProps) {
 //   if (useEmoji) {
