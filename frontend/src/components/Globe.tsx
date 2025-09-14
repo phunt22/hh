@@ -96,7 +96,13 @@ export default function Globe({
     return grouped;
   }, [data]);
 
-  const displayedData: EventPoint[] = isTimelineActive ? (timelineGroupedData[currentTimelineIndex] || []) : 
+  const displayedData: EventPoint[] = isTimelineActive
+    ? (
+        currentTimelineIndex === 0
+          ? (timelineGroupedData[0] || [])
+          : (timelineGroupedData[currentTimelineIndex - 1] || []).concat(timelineGroupedData[currentTimelineIndex] || [])
+      )
+    : 
   search.isSearchActive ? (search.searchResults ?? []) : (data ?? []);
 
   const { containerRef, mapRef } = useMapInstance({
@@ -202,7 +208,7 @@ export default function Globe({
           }
           return prevIndex + 1;
         });
-      }, 1000);
+      }, 700);
     }
   };
   
