@@ -20,7 +20,7 @@ export default function Pin({ color = "#FF3B3B", size = 32, style, useEmoji = fa
   return (
     <svg width={size} height={size} viewBox="0 0 64 64" style={style} xmlns="http://www.w3.org/2000/svg" aria-hidden>
       <ellipse cx="32" cy="52" rx="4" ry="1.5" fill="#000" opacity="0.12" />
-      <rect x="31.4" y="26" width="1.2" height="18" rx="0.6" fill="#64748B" />
+      <rect x="31.4" y="26" width="5" height="18" rx="0.6" fill="#64748B" />
       <circle cx="32" cy="18" r="8" fill={color} stroke="rgba(255,255,255,0.5)" strokeWidth="0.5" />
     </svg>
   );

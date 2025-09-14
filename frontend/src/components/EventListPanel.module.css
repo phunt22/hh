@@ -1,12 +1,11 @@
 .panel {
   position: absolute;
-  top: 0;
-  bottom: 0;
-  right: 0;
+  top: 12px;
+  right: 12px;
   height: auto;
-  max-height: 100vh;
-  width: 420px;
-  background: transparent;
+  max-height: calc(100vh - 24px);
+  width: 480px;
+  /* background: rgba(10, 10, 10, 0.55); */
   color: #fff;
   display: flex;
   flex-direction: column;
@@ -14,18 +13,49 @@
   touch-action: pan-y;
   overscroll-behavior: contain;
   pointer-events: auto;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px 0 0 12px;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  animation: panelIn 200ms ease-out;
+}
+
+.closing {
+  animation: panelOut 180ms ease-in forwards;
+}
+
+@keyframes panelIn {
+  from {
+    opacity: 0;
+    transform: translateX(16px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes panelOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(12px) scale(0.98);
+  }
 }
 
 .header {
-  padding: 14px 16px;
+  padding: 16px 18px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 4px;
+  gap: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   font-weight: 600;
-  background: rgba(17, 17, 17, 0.96);
-  border-radius: 0 0 0 8px;
+  background: linear-gradient(180deg, rgba(22, 22, 26, 0.95) 0%, rgba(18, 18, 22, 0.85) 100%);
+  border-radius: 12px 0 0 0;
 }
 
 .headerTitle {
@@ -35,6 +65,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  font-size: 17px;
 }
 
 .listWrapper {
@@ -43,26 +74,26 @@
   flex-direction: column;
   min-height: 0; 
   overflow: hidden;
-  padding-top: 10px;
+  padding: 10px 8px 12px 8px;
+  background: radial-gradient(120% 60% at 100% 0%, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 40%, rgba(255, 255, 255, 0.00) 100%);
 }
 
 .list {
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
-  padding: 14px 0px 14px 0px;
-  padding-top: 0;
+  padding: 6px 6px 6px 6px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
 
 .closeBtn {
   flex: 0 0 auto;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -75,11 +106,13 @@
   line-height: 1;
   font-size: 18px;
   -webkit-tap-highlight-color: rgba(255, 255, 255, 0.35);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
 }
 
 .closeBtn:hover {
   background: rgba(255, 255, 255, 0.18);
   border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
 .closeBtn:focus { outline: none; }
@@ -108,6 +141,7 @@
 
 .empty {
   color: #bbb;
+  text-align: center;
 }
 
 .similarSection {

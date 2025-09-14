@@ -1,24 +1,25 @@
 .icon {
-  width: 40px;
-  height: 40px;
+  width: 46px;
+  height: 46px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: rgba(17, 17, 17, 0.96);
+  background: rgba(17, 17, 17, 0.9);
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 999px;
   cursor: pointer;
   padding: 0;
   line-height: 1;
   font-size: 18px;
   -webkit-tap-highlight-color: rgba(255, 255, 255, 0.35);
-  transition: all 0.15s ease;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease, color 0.2s ease;
 }
 
 .icon:hover {
   background: rgba(17, 17, 17, 1);
-  border-color: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35);
 }
 
 .icon:focus {
@@ -27,7 +28,7 @@
 
 .icon:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
 }
 
 .icon:active {
@@ -37,7 +38,7 @@
 .active {
   background: #fff;
   color: #000;
-  border-color: rgba(255, 255, 255, 0.08); /* match search icon stroke */
+  border-color: rgba(255, 255, 255, 0.12); /* match search icon stroke */
 }
 
 .active:hover {

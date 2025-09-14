@@ -1,6 +1,16 @@
 import type { EventPoint } from '../types';
 import { normalizeCategorySlug } from '../utils/categories';
 
+const ATTENDANCE_CAP = 5000;
+
+function computeHeatmapWeight(raw?: number | null): number {
+  const value = typeof raw === 'number' && isFinite(raw) ? Math.max(raw, 0) : 0;
+  const normalized = Math.log1p(value) / Math.log1p(ATTENDANCE_CAP);
+  const clamped = Math.max(0, Math.min(1, normalized));
+  const baseline = 0.03; // ensure non-zero contribution even for 0/missing
+  return Math.max(baseline, clamped);
+}
+
 export const zoomToRadiusKm = (z: number) => {
   if (z >= 16) return 1.2;
   if (z >= 14) return 2.5;
@@ -26,6 +36,7 @@ export const toFeatureCollection = (rows: EventPoint[]) => ({
       category: normalizeCategorySlug(e.category) || "",
       location: e.location ?? "",
       attendance: (e as any).attendance ?? (e as any).expectedAttendees ?? null,
+      weight: computeHeatmapWeight((e as any).attendance ?? (e as any).expectedAttendees ?? null),
     }
   }))
 });

@@ -132,7 +132,7 @@ export default function Globe({
 				<Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
 			)}
 
-			<div style={{ position: "absolute", top: 12, right: panel ? 432 : 12, zIndex: 15 }}>
+			<div style={{ position: "absolute", top: 12, right: panel ? 504 : 12, zIndex: 15 }}>
 				<div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 					<SearchIcon onClick={search.openSearch} />
 					<FilterIcon 

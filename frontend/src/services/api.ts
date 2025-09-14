@@ -3,7 +3,6 @@ import { normalizeCategorySlug } from '../utils/categories';
 
 const API_BASE_URL = (import.meta as any).env?.VITE_API_BASE_URL || 'https://fastapi-backend-e0m2.onrender.com/api/v1';
 
-
 export interface BackendEvent {
   id: string;
   title: string;
@@ -200,7 +199,13 @@ export class EventsAPI {
     if (!response.ok) {
       throw new Error(`Failed to fetch categories: ${response.statusText}`);
     }
-    const categories: string[] = await response.json();
-    return categories;
+    const data = await response.json();
+    if (Array.isArray(data)) {
+      return data as string[];
+    }
+    if (data && Array.isArray(data.categories)) {
+      return data.categories as string[];
+    }
+    return [];
   }
 }
