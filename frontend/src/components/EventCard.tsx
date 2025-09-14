@@ -1,10 +1,10 @@
-import { useState } from "react";
 import { formatCategoryLabel } from "../utils/categories";
 import type { EventPoint } from "../types";
 import styles from "./EventCard.module.css";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEventInsights } from "@/hooks/useEventInsights";
+import { useState } from "react";
 
 export default function EventCard({ event, onClick }: { event: EventPoint; onClick?: () => void }) {
   const [showSimilar, setShowSimilar] = useState(false);
@@ -20,6 +20,8 @@ export default function EventCard({ event, onClick }: { event: EventPoint; onCli
     enabled: accordionOpen
   });
 
+  
+  // i.e. "performing-arts" -> "Performing Arts"
   const prettifyCategory = (value?: string | null) => formatCategoryLabel(value || "");
 
   const formatDate = (iso?: string) => {
@@ -36,7 +38,7 @@ export default function EventCard({ event, onClick }: { event: EventPoint; onCli
     if (count === undefined || count === null) {
       // Return a random number between 20 and 200 as a fallback
       const random = Math.floor(Math.random() * (200 - 20 + 1)) + 20;
-      return `${random} expected`;
+      return `${random} people expected`;
     }
     if (count >= 1000) return `${Math.round(count / 1000)}k people expected`;
     return `${count} people expected`;
@@ -78,8 +80,8 @@ export default function EventCard({ event, onClick }: { event: EventPoint; onCli
             : (event.start ? formatDate(event.start) : null)}
         </div>
       )}
-
-      {event.attendance && (
+      
+      {(event.attendance !== undefined && event.attendance !== null) && (
         <div className={styles.metaRow}>
           <span className={styles.meta}>{formatAttendees(event.attendance)}</span>
         </div>

@@ -9,9 +9,10 @@ export type EventListPanelProps = {
   onClose: () => void;
   onEventClick?: (e: EventPoint) => void;
   isSearchResults: boolean;
+  onClosingChange?: (closing: boolean) => void;
 };
 
-export default function EventListPanel({ locationLabel, events, onClose, onEventClick, isSearchResults }: EventListPanelProps) {
+export default function EventListPanel({ locationLabel, events, onClose, onEventClick, isSearchResults, onClosingChange }: EventListPanelProps) {
   const [isClosing, setIsClosing] = useState(false);
   const closeRef = useRef<HTMLButtonElement | null>(null);
 
@@ -20,12 +21,21 @@ export default function EventListPanel({ locationLabel, events, onClose, onEvent
     return () => clearTimeout(t);
   }, []);
 
+  // Sort events by expected attendance (descending)
+  const sortedByAttendance = (events || []).slice().sort((a, b) => {
+    const aAttendance = a.attendance ?? 0;
+    const bAttendance = b.attendance ?? 0;
+    return bAttendance - aAttendance;
+  });
+
   const handleClose = () => {
     if (isClosing) return;
     setIsClosing(true);
+    onClosingChange?.(true);
 
     setTimeout(() => {
       onClose();
+      onClosingChange?.(false);
     }, 180);
   };
 
@@ -43,18 +53,18 @@ export default function EventListPanel({ locationLabel, events, onClose, onEvent
           ref={closeRef}
           onClick={handleClose}
           aria-label="Close" 
-          className={`${styles.closeBtn} ${isSearchResults ? styles.closeBtnDanger : ""}`}
+          className={styles.closeBtn}
           title={isSearchResults ? "Clear search results" : "Close"}
         >✕</button>
       </div>
       <div className={styles.listWrapper}>
         <div className={styles.list}>
-          {events.map((e) => (
+          {sortedByAttendance.slice(0, 10).map((e) => (
             <div key={e.id} onClick={() => onEventClick?.(e)}>
               <EventCard event={e} onClick={() => onEventClick?.(e)} />
             </div>
           ))}
-          {events.length === 0 && (
+          {sortedByAttendance.length === 0 && (
             <div className={styles.empty}>No events at this location.</div>
           )}
         </div>

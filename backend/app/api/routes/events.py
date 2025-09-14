@@ -44,6 +44,70 @@ async def get_events(
     )
 
 
+# @router.post("/search/similar", response_model=SimilaritySearchResponse)
+# async def search_similar_events(
+#     request: SimilaritySearchRequest,
+#     session: AsyncSession = Depends(get_session)
+# ) -> SimilaritySearchResponse:
+#     """Search for similar events using text query or event ID"""
+    
+#     if not request.query_text and not request.event_id:
+#         raise HTTPException(
+#             status_code=400, 
+#             detail="Either query_text or event_id must be provided"
+#         )
+    
+#     try:
+#         # Force limit to 5 for similarity search
+#         similarity_limit = 5
+        
+#         if request.event_id:
+#             # Search by event ID using embeddings
+#             similar_events_with_scores = await enhanced_similarity_service.find_similar_events_by_id(
+#                 session=session,
+#                 event_id=request.event_id,
+#                 limit=similarity_limit,
+#                 min_similarity=request.min_similarity
+#             )
+            
+#             # Get the source event for response
+#             source_event_query = select(Event).where(Event.id == request.event_id)
+#             source_result = await session.execute(source_event_query)
+#             source_event = source_result.scalar_one_or_none()
+#             query_event = EventResponse.from_orm(source_event) if source_event else None
+            
+#         else:
+#             # Search by text query using embeddings
+#             similar_events_with_scores = await enhanced_similarity_service.find_similar_events_by_text(
+#                 session=session,
+#                 query_text=request.query_text,
+#                 limit=similarity_limit,
+#                 min_similarity=request.min_similarity
+#             )
+#             query_event = None
+        
+#         # Convert to response format
+#         from app.schemas.event import SimilarEvent
+#         similar_events = [
+#             SimilarEvent(
+#                 event=EventResponse.from_orm(event),
+#                 similarity_score=score,
+#                 relationship_type="similar"
+#             )
+#             for event, score in similar_events_with_scores
+#         ]
+        
+#         return SimilaritySearchResponse(
+#             query_event=query_event,
+#             similar_events=similar_events,
+#             total_found=len(similar_events)
+#         )
+    
+#     except Exception as e:
+#         logger.error(f"Error in similarity search: {e}")
+#         raise HTTPException(status_code=500, detail="Error performing similarity search")
+
+#debugging similiarities
 @router.post("/search/similar", response_model=SimilaritySearchResponse)
 async def search_similar_events(
     request: SimilaritySearchRequest,
@@ -51,7 +115,13 @@ async def search_similar_events(
 ) -> SimilaritySearchResponse:
     """Search for similar events using text query or event ID"""
     
+    logger.info(f"=== SEARCH REQUEST START ===")
+    logger.info(f"Request data: {request}")
+    logger.info(f"Query text: {request.query_text}")
+    logger.info(f"Event ID: {request.event_id}")
+    
     if not request.query_text and not request.event_id:
+        logger.error("No query_text or event_id provided")
         raise HTTPException(
             status_code=400, 
             detail="Either query_text or event_id must be provided"
@@ -60,8 +130,10 @@ async def search_similar_events(
     try:
         # Force limit to 5 for similarity search
         similarity_limit = 5
+        logger.info(f"Using similarity limit: {similarity_limit}")
         
         if request.event_id:
+            logger.info("Searching by event ID...")
             # Search by event ID using embeddings
             similar_events_with_scores = await enhanced_similarity_service.find_similar_events_by_id(
                 session=session,
@@ -71,41 +143,80 @@ async def search_similar_events(
             )
             
             # Get the source event for response
+            logger.info("Getting source event...")
             source_event_query = select(Event).where(Event.id == request.event_id)
             source_result = await session.execute(source_event_query)
             source_event = source_result.scalar_one_or_none()
             query_event = EventResponse.from_orm(source_event) if source_event else None
             
         else:
+            logger.info(f"Searching by text: '{request.query_text}'")
+            
+            # First, let's check if we can generate an embedding
+            try:
+                logger.info("Testing embedding generation...")
+                test_embedding = await embedding_service.generate_embedding(request.query_text)
+                logger.info(f"Embedding generated successfully. Length: {len(test_embedding) if test_embedding else 'None'}")
+            except Exception as embedding_error:
+                logger.error(f"Embedding generation failed: {embedding_error}")
+                raise HTTPException(status_code=500, detail=f"Embedding generation failed: {str(embedding_error)}")
+            
             # Search by text query using embeddings
-            similar_events_with_scores = await enhanced_similarity_service.find_similar_events_by_text(
-                session=session,
-                query_text=request.query_text,
-                limit=similarity_limit,
-                min_similarity=request.min_similarity
-            )
+            try:
+                logger.info("Calling enhanced similarity service...")
+                similar_events_with_scores = await enhanced_similarity_service.find_similar_events_by_text(
+                    session=session,
+                    query_text=request.query_text,
+                    limit=similarity_limit,
+                    min_similarity=request.min_similarity
+                )
+                logger.info(f"Similarity search returned {len(similar_events_with_scores)} results")
+            except Exception as similarity_error:
+                logger.error(f"Similarity search failed: {similarity_error}")
+                raise HTTPException(status_code=500, detail=f"Similarity search failed: {str(similarity_error)}")
+            
             query_event = None
         
         # Convert to response format
+        logger.info("Converting results to response format...")
         from app.schemas.event import SimilarEvent
-        similar_events = [
-            SimilarEvent(
-                event=EventResponse.from_orm(event),
-                similarity_score=score,
-                relationship_type="similar"
-            )
-            for event, score in similar_events_with_scores
-        ]
         
-        return SimilaritySearchResponse(
+        similar_events = []
+        for i, (event, score) in enumerate(similar_events_with_scores):
+            try:
+                logger.info(f"Processing result {i}: event_id={event.id}, score={score}")
+                similar_event = SimilarEvent(
+                    event=EventResponse.from_orm(event),
+                    similarity_score=score,
+                    relationship_type="similar"
+                )
+                similar_events.append(similar_event)
+            except Exception as convert_error:
+                logger.error(f"Error converting event {i}: {convert_error}")
+                continue
+        
+        logger.info(f"Successfully converted {len(similar_events)} events")
+        
+        response = SimilaritySearchResponse(
             query_event=query_event,
             similar_events=similar_events,
             total_found=len(similar_events)
         )
+        
+        logger.info(f"=== SEARCH REQUEST SUCCESS ===")
+        return response
     
+    except HTTPException:
+        # Re-raise HTTP exceptions (these are handled properly)
+        raise
     except Exception as e:
-        logger.error(f"Error in similarity search: {e}")
-        raise HTTPException(status_code=500, detail="Error performing similarity search")
+        logger.error(f"=== SEARCH REQUEST FAILED ===")
+        logger.error(f"Unexpected error in similarity search: {e}")
+        logger.error(f"Error type: {type(e).__name__}")
+        import traceback
+        logger.error(f"Traceback: {traceback.format_exc()}")
+        raise HTTPException(status_code=500, detail=f"Error performing similarity search: {str(e)}")
+
 
 @router.get("/busiest-cities", response_model=List[BusiestCity])
 async def get_busiest_cities(
@@ -430,3 +541,115 @@ async def delete_event(
         logger.error(f"Error deleting event {event_id}: {e}")
         await session.rollback()
         raise HTTPException(status_code=500, detail="Error deleting event")
+
+# to debuug
+# Add these test endpoints to your router to debug the system
+
+@router.get("/debug/test")
+async def debug_test(session: AsyncSession = Depends(get_session)):
+    """Test basic database connectivity and services"""
+    
+    results = {}
+    
+    # Test 1: Database connection
+    try:
+        query = select(func.count(Event.id))
+        result = await session.execute(query)
+        total_events = result.scalar()
+        results["database"] = {"status": "ok", "total_events": total_events}
+    except Exception as e:
+        results["database"] = {"status": "error", "error": str(e)}
+    
+    # Test 2: Events with embeddings
+    try:
+        query = select(func.count(Event.id)).where(Event.embeddings.is_not(None))
+        result = await session.execute(query)
+        events_with_embeddings = result.scalar()
+        results["embeddings_count"] = {"status": "ok", "count": events_with_embeddings}
+    except Exception as e:
+        results["embeddings_count"] = {"status": "error", "error": str(e)}
+    
+    # Test 3: Embedding service
+    try:
+        test_embedding = await embedding_service.generate_embedding("test text")
+        results["embedding_service"] = {
+            "status": "ok", 
+            "embedding_length": len(test_embedding) if test_embedding else None
+        }
+    except Exception as e:
+        results["embedding_service"] = {"status": "error", "error": str(e)}
+    
+    # Test 4: Get sample events
+    try:
+        query = select(Event).limit(3)
+        result = await session.execute(query)
+        sample_events = result.scalars().all()
+        results["sample_events"] = {
+            "status": "ok", 
+            "count": len(sample_events),
+            "events": [{"id": e.id, "title": e.title, "has_embedding": e.embeddings is not None} for e in sample_events]
+        }
+    except Exception as e:
+        results["sample_events"] = {"status": "error", "error": str(e)}
+    
+    return results
+
+
+@router.post("/debug/simple-search")
+async def debug_simple_search(
+    query_text: str,
+    session: AsyncSession = Depends(get_session)
+):
+    """Simple search test without full similarity service"""
+    
+    results = {}
+    
+    # Step 1: Generate embedding
+    try:
+        embedding = await embedding_service.generate_embedding(query_text)
+        results["embedding"] = {
+            "status": "ok", 
+            "length": len(embedding),
+            "sample": embedding[:5] if embedding else None
+        }
+    except Exception as e:
+        results["embedding"] = {"status": "error", "error": str(e)}
+        return results
+    
+    # Step 2: Try manual similarity search (fallback method)
+    try:
+        from app.services.enhanced_similarity import enhanced_similarity_service
+        similar_events = await enhanced_similarity_service._manual_similarity_search(
+            session=session,
+            query_embedding=embedding,
+            limit=3,
+            min_similarity=0.3,  # Lower threshold for testing
+            exclude_event_id=None
+        )
+        results["manual_search"] = {
+            "status": "ok",
+            "count": len(similar_events),
+            "events": [{"id": e.id, "title": e.title, "score": score} for e, score in similar_events]
+        }
+    except Exception as e:
+        results["manual_search"] = {"status": "error", "error": str(e)}
+    
+    # Step 3: Try vector search (pgvector method)
+    try:
+        from app.services.enhanced_similarity import enhanced_similarity_service
+        similar_events = await enhanced_similarity_service._find_by_vector_similarity(
+            session=session,
+            query_embedding=embedding,
+            limit=3,
+            min_similarity=0.3,  # Lower threshold for testing
+            exclude_event_id=None
+        )
+        results["vector_search"] = {
+            "status": "ok",
+            "count": len(similar_events),
+            "events": [{"id": e.id, "title": e.title, "score": score} for e, score in similar_events]
+        }
+    except Exception as e:
+        results["vector_search"] = {"status": "error", "error": str(e)}
+    
+    return results

@@ -30,7 +30,6 @@ export default function Globe({
   maxClientPoints = 40000,
   fetchDebounceMs = 220,
   style,
-  startAtUserLocation = false
 }: GlobeProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [hoverInfo, setHoverInfo] = useState<HoverInfo>(null);
@@ -39,6 +38,7 @@ export default function Globe({
   const [isTimelineActive, setIsTimelineActive] = useState(false);
   const [currentTimelineIndex, setCurrentTimelineIndex] = useState<number>(0);
   const [timelineInterval, setTimelineInterval] = useState<number | null>(null);
+  const [isPanelClosing, setIsPanelClosing] = useState(false);
   const [busiestCities, setBusiestCities] = useState<BusiestCity[]>([]);
   const [isLoadingBusiestCities, setIsLoadingBusiestCities] = useState(false);
 
@@ -102,7 +102,6 @@ export default function Globe({
     mapStyle,
     initialView,
     initialData,
-    startAtUserLocation,
     onToast: setToastMessage,
     onHoverChange: setHoverInfo,
     onPanelChange: setPanel,
@@ -233,63 +232,163 @@ export default function Globe({
       return;
     }
 
-    setIsLoadingBusiestCities(true);
-    try {
-      const cities = await EventsAPI.getBusiestCities({ limit: 10, time_window_days: 7 });
-      setBusiestCities(cities);
+  //   setIsLoadingBusiestCities(true);
+  //   try {
+  //     const cities = await EventsAPI.getBusiestCities({ limit: 10, time_window_days: 7 });
+  //     setBusiestCities(cities);
       
-      // Convert to EventPoint format for display
-      const allEvents = cities.flatMap((city: BusiestCity) => 
-        city.top_events.map((event: any) => ({
-          id: event.id,
-          title: event.title,
-          lat: event.latitude || 0,
-          lng: event.longitude || 0,
-          description: event.description,
-          attendance: event.attendance || 0,
-          start: event.start,
-          end: event.end,
-          category: event.category,
-          location: event.location,
-        }))
-      );
+  //     // Convert to EventPoint format for display
+  //     const allEvents = cities.flatMap((city: BusiestCity) => 
+  //       city.top_events.map((event: any) => ({
+  //         id: event.id,
+  //         title: event.title,
+  //         lat: event.latitude || 0,
+  //         lng: event.longitude || 0,
+  //         description: event.description,
+  //         attendance: event.attendance || 0,
+  //         start: event.start,
+  //         end: event.end,
+  //         category: event.category,
+  //         location: event.location,
+  //       }))
+  //     );
       
-      setPanel({ 
-        locationLabel: `Busiest Cities (${cities.length} cities)`, 
-        events: allEvents 
-      });
+  //     setPanel({ 
+  //       locationLabel: `Busiest Cities (${cities.length} cities)`, 
+  //       events: allEvents 
+  //     });
       
-      // Fit map to show all busiest cities
-      fitMapToResults(allEvents);
+  //     // Fit map to show all busiest cities
+  //     fitMapToResults(allEvents);
       
-    } catch (error) {
-      setToastMessage('Busiest cities feature is temporarily unavailable. The backend needs more event data with attendance information.');
-      console.error('Error fetching busiest cities:', error);
+  //   } catch (error) {
+  //     setToastMessage('Busiest cities feature is temporarily unavailable. The backend needs more event data with attendance information.');
+  //     console.error('Error fetching busiest cities:', error);
       
-      // Show a fallback with some sample data for demonstration
-      const fallbackEvents = (data ?? []).slice(0, 10).map(event => ({
+  //     // Show a fallback with some sample data for demonstration
+  //     const fallbackEvents = (data ?? []).slice(0, 10).map(event => ({
+  //       id: event.id,
+  //       title: event.title,
+  //       lat: event.lat,
+  //       lng: event.lng,
+  //       description: event.description,
+  //       attendance: event.attendance,
+  //       start: event.start,
+  //       end: event.end,
+  //       category: event.category,
+  //       location: event.location,
+  //     }));
+      
+  //     setPanel({ 
+  //       locationLabel: 'Sample Events (Busiest Cities feature coming soon)', 
+  //       events: fallbackEvents 
+  //     });
+  //   } finally {
+  //     setIsLoadingBusiestCities(false);
+  //   }
+  // };
+
+	
+  // Update your handleBusiestCitiesClick function in Globe.tsx
+const handleBusiestCitiesClick = async () => {
+  if (busiestCities.length > 0) {
+    // If we already have data, show it
+    console.log('Using cached cities:', busiestCities);
+    const allEvents = busiestCities.flatMap((city: BusiestCity) => 
+      city.top_events.map((event: any) => ({
         id: event.id,
         title: event.title,
-        lat: event.lat,
-        lng: event.lng,
+        lat: event.latitude || 0,
+        lng: event.longitude || 0,
         description: event.description,
-        attendance: event.attendance,
+        attendance: event.attendance || 0,
         start: event.start,
         end: event.end,
         category: event.category,
         location: event.location,
-      }));
-      
-      setPanel({ 
-        locationLabel: 'Sample Events (Busiest Cities feature coming soon)', 
-        events: fallbackEvents 
-      });
-    } finally {
-      setIsLoadingBusiestCities(false);
-    }
-  };
+      }))
+    );
+    setPanel({ 
+      locationLabel: `Busiest Cities (${busiestCities.length} cities)`, 
+      events: allEvents 
+    });
+    return;
+  }
 
-	return (
+  setIsLoadingBusiestCities(true);
+  try {
+    console.log('🔄 Fetching busiest cities...');
+    const cities = await EventsAPI.getBusiestCities({ limit: 10, time_window_days: 7 });
+    
+    // DEBUG: Let's see what we actually got
+    console.log('✅ Raw API Response:', cities);
+    console.log('📊 Number of cities returned:', cities.length);
+    
+    // Log each city's details
+    cities.forEach((city, index) => {
+      console.log(`🏙️  City ${index + 1}: ${city.city}`);
+      console.log(`   Total attendance: ${city.total_attendance}`);
+      console.log(`   Events: ${city.top_events}`);
+      console.log(`   Event Count:`, city.event_counts);
+      console.log('---');
+    });
+    
+    setBusiestCities(cities);
+    
+    // Convert to EventPoint format for display
+    const allEvents = cities.flatMap((city: BusiestCity) => 
+      city.top_events.map((event: any) => ({
+        id: event.id,
+        title: event.title,
+        lat: event.latitude || 0,
+        lng: event.longitude || 0,
+        description: event.description,
+        attendance: event.attendance || 0,
+        start: event.start,
+        end: event.end,
+        category: event.category,
+        location: event.location,
+      }))
+    );
+    
+    console.log('🎯 Total events from all cities:', allEvents.length);
+    
+    setPanel({ 
+      locationLabel: `Busiest Cities (${cities.length} cities)`, 
+      events: allEvents 
+    });
+    
+    // Fit map to show all busiest cities
+    fitMapToResults(allEvents);
+    
+  } catch (error) {
+    console.error('❌ Error fetching busiest cities:', error);
+    setToastMessage('Busiest cities feature is temporarily unavailable. The backend needs more event data with attendance information.');
+    
+    // Show a fallback with some sample data for demonstration
+    const fallbackEvents = (data ?? []).slice(0, 10).map(event => ({
+      id: event.id,
+      title: event.title,
+      lat: event.lat,
+      lng: event.lng,
+      description: event.description,
+      attendance: event.attendance,
+      start: event.start,
+      end: event.end,
+      category: event.category,
+      location: event.location,
+    }));
+    
+    setPanel({ 
+      locationLabel: 'Sample Events (Busiest Cities feature coming soon)', 
+      events: fallbackEvents 
+    });
+  } finally {
+    setIsLoadingBusiestCities(false);
+  }
+};
+  
+  return (
 		<div style={{ position: "relative", width: "100vw", height: "100vh", ...style }}>
 			<div ref={containerRef} style={{ position: "absolute", inset: 0 }} />
 
@@ -297,8 +396,8 @@ export default function Globe({
 				<Toast message={toastMessage} duration={3000} onClose={() => setToastMessage(null)} />
 			)}
 
-			<div style={{ position: "absolute", top: 12, right: panel ? 504 : 12, zIndex: 15 }}>
-				<div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 15 }}>
+			<div style={{ position: "absolute", top: 12, marginTop: 3, right: panel ? (isPanelClosing ? 12 : 504) : 12, zIndex: 15, transition: 'right 180ms ease, transform 180ms ease', transform: isPanelClosing ? 'translateX(16px) scale(0.98)' : 'translateX(0) scale(1)' }}>
+				<div style={{ display: 'flex', flexDirection: 'column', gap: 12, marginTop: 0 }}>
 					<SearchIcon onClick={search.openSearch} />
 					<FilterIcon
 						active={filters.isActive}
@@ -321,6 +420,7 @@ export default function Globe({
           events={panel.events}
           isSearchResults={panel.isSearch === true}
           onEventClick={handleEventClick}
+          onClosingChange={setIsPanelClosing}
           onClose={() => {
             if (panel?.isSearch) {
               search.clearSearch();
