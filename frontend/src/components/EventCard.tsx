@@ -91,7 +91,7 @@ export default function EventCard({ event, onClick }: { event: EventPoint; onCli
 
       {/* Accordion for Event Insights */}
       <Accordion className="mt-3" type="single" collapsible>
-        <AccordionItem value={event.id}>
+        <AccordionItem value={event.id} className="border-none" >
           <AccordionTrigger onClick={() => setAccordionOpen(!accordionOpen)}>
             Event Insights
           </AccordionTrigger>

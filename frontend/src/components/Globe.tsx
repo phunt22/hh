@@ -22,6 +22,7 @@ import { EventsAPI, type BusiestCity } from '../services/api';
 import TimelineIcon from "./TimelineIcon";
 import TimelineSlider from "./TimelineSlider";
 import { AudioPlayerWithVisualizer } from "./AudioPlayer";
+import {BusiestCitiesChart} from './BusiestCitiesChart';
 
 export default function Globe({
   data,
@@ -205,7 +206,6 @@ export default function Globe({
     }
   };
   
-	
   // Update your handleBusiestCitiesClick function in Globe.tsx
   const handleBusiestCitiesClick = async () => {
     if (busiestCities.length > 0) {
@@ -332,19 +332,22 @@ export default function Globe({
       <HoverModal info={hoverInfo} />
 
       {panel && (
-        <EventListPanel
-          locationLabel={panel.locationLabel}
-          events={panel.events}
-          isSearchResults={panel.isSearch === true}
-          onEventClick={handleEventClick}
-          onClosingChange={setIsPanelClosing}
-          onClose={() => {
-            if (panel?.isSearch) {
-              search.clearSearch();
-            }
-            setPanel(null);
-          }}
-        />
+        <>
+          <EventListPanel
+            header={<BusiestCitiesChart busiestCities={busiestCities} />}
+            locationLabel={panel.locationLabel}
+            events={panel.events}
+            isSearchResults={panel.isSearch === true}
+            onEventClick={handleEventClick}
+            onClosingChange={setIsPanelClosing}
+            onClose={() => {
+              if (panel?.isSearch) {
+                search.clearSearch();
+              }
+              setPanel(null);
+            }}
+          />
+        </>
       )}
 
       <SearchOverlay

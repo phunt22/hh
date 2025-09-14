@@ -10,9 +10,10 @@ export type EventListPanelProps = {
   onEventClick?: (e: EventPoint) => void;
   isSearchResults: boolean;
   onClosingChange?: (closing: boolean) => void;
+  header?: React.ReactNode;
 };
 
-export default function EventListPanel({ locationLabel, events, onClose, onEventClick, isSearchResults, onClosingChange }: EventListPanelProps) {
+export default function EventListPanel({ header,locationLabel, events, onClose, onEventClick, isSearchResults, onClosingChange }: EventListPanelProps) {
   const [isClosing, setIsClosing] = useState(false);
   const closeRef = useRef<HTMLButtonElement | null>(null);
 
@@ -57,8 +58,14 @@ export default function EventListPanel({ locationLabel, events, onClose, onEvent
           title={isSearchResults ? "Clear search results" : "Close"}
         >✕</button>
       </div>
+
       <div className={styles.listWrapper}>
         <div className={styles.list}>
+          {header && (
+            <div>
+              {header}
+            </div>
+          )}
           {sortedByAttendance.slice(0, 10).map((e) => (
             <div key={e.id} onClick={() => onEventClick?.(e)}>
               <EventCard event={e} onClick={() => onEventClick?.(e)} />
