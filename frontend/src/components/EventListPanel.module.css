@@ -97,14 +97,13 @@
 }
 
 .closeBtn {
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   line-height: 1;
-  font-size: 18px;
   -webkit-tap-highlight-color: rgba(255, 255, 255, 0.35);
   transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
   background: rgba(17, 17, 17, 0.98); /* match EventCard background */
