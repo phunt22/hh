@@ -68,8 +68,6 @@ export default function Globe({
     data: displayedData
   });
 
-	const { doZoom, reset } = useMapControls(mapRef.current, initialView);
-
   const fitMapToResults = (results: EventPoint[]) => {
     const map = mapRef.current;
     if (!map || !results || results.length === 0) return;
