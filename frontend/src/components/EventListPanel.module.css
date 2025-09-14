@@ -153,8 +153,6 @@
   transform: scale(0.96);
 }
 
-/* removed danger variant to unify with left buttons */
-
 .empty {
   color: #bbb;
   text-align: center;
