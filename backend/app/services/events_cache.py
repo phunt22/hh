@@ -29,12 +29,18 @@ class EventsCacheService:
         """Get events from cache, fallback to DB if cache has < 100 events"""
         
         # Generate cache key for today
-        today = datetime.now(timezone.utc)
-        cache_key = redis_cache.get_daily_cache_key(today)
-        
-        # Try to get from cache first
-        cached_events = await redis_cache.get_cached_events(cache_key)
-        
+        # Get cached events for the last 2 days
+        now = datetime.now(timezone.utc)
+        cache_keys = [
+            redis_cache.get_daily_cache_key(now),
+            redis_cache.get_daily_cache_key(now - timedelta(days=1))
+        ]
+        cached_events = []
+        for key in cache_keys:
+            events = await redis_cache.get_cached_events(key)
+            if events:
+                cached_events.extend(events)
+                
         if cached_events and len(cached_events) >= self.min_cache_threshold:
             logger.info(f"Using cache with {len(cached_events)} events")
             

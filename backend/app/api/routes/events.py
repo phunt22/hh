@@ -32,7 +32,7 @@ router = APIRouter(prefix="/events", tags=["Events"])
 async def get_events(
     session: AsyncSession = Depends(get_session),
     skip: int = Query(0, ge=0, description="Number of events to skip"),
-    limit: int = Query(100, ge=1, le=1000, description="Number of events to return"),
+    limit: int = Query(100, ge=1, le=5000, description="Number of events to return"),
     category: Optional[str] = Query(None, description="Filter by category"),
     location_query: Optional[str] = Query(None, description="Search in location field")
 ) -> List[EventResponse]:
