@@ -335,16 +335,17 @@ class EventsCacheService:
 
         query = (
             select(
-                Event.city.label('city'),
+                Event.region.label('region'),
                 func.sum(Event.attendance).label('total_attendance')
             )
             .where(
                 Event.start >= start_time,
                 Event.start <= end_time,
                 Event.attendance.is_not(None),
-                Event.location.is_not(None)
+                Event.region.is_not(None),
+                Event.region != ""
             )
-            .group_by(Event.city)
+            .group_by(Event.region)
             .order_by(desc(func.sum(Event.attendance)))
             .limit(limit)
         )
@@ -355,7 +356,7 @@ class EventsCacheService:
 
         for idx, row in enumerate(result):
             # For each busiest city, fetch its top 5 events
-            city_name = row.city.strip() if row.city else ""
+            city_name = row.region.strip() if row.region else ""
             if not city_name:
                 logger.warning(f"Skipping row {idx+1} with empty city name")
                 continue
@@ -418,32 +419,55 @@ class EventsCacheService:
             f"Fetching top {event_limit} events for city '{city_name}' "
             f"between {start_time} and {end_time}"
         )
-        city_expression = func.split_part(Event.location, ',', 1)
 
+        # Try multiple approaches to match the city
+        # First try exact city match
         query = (
             select(Event)
             .where(
-                city_expression == city_name,
+                Event.region == city_name,
                 Event.start >= start_time,
-                Event.start <= end_time,
-                Event.attendance.is_not(None) # Prioritize events with attendance
+                Event.start <= end_time
             )
-            .order_by(desc(Event.attendance))
+            .order_by(
+                desc(Event.attendance),  # Events with attendance first
+                desc(Event.start)        # Then by start time
+            )
             .limit(event_limit)
         )
         
         try:
             result = await session.execute(query)
             events = result.scalars().all()
-            logger.debug(
-                f"Found {len(events)} events for city '{city_name}' "
-                f"in the specified time window"
-            )
+            
+            # If no events found with exact city match, try location-based matching
+            if not events:
+                logger.debug(f"No events found for exact city '{city_name}', trying location-based matching")
+                location_query = (
+                    select(Event)
+                    .where(
+                        Event.location.ilike(f"%{city_name}%"),
+                        Event.start >= start_time,
+                        Event.start <= end_time
+                    )
+                    .order_by(
+                        desc(Event.attendance),
+                        desc(Event.start)
+                    )
+                    .limit(event_limit)
+                )
+                result = await session.execute(location_query)
+                events = result.scalars().all()
+                logger.debug(f"Found {len(events)} events using location-based matching for '{city_name}'")
+            
         except Exception as e:
-            logger.error(
-                f"Error fetching top events for city '{city_name}': {e}"
-            )
+            logger.error(f"Error fetching top events for city '{city_name}': {e}")
             events = []
+        
+        logger.debug(
+            f"Found {len(events)} events for city '{city_name}' "
+            f"in the specified time window"
+        )
         return [EventResponse.from_orm(event) for event in events]
 
     async def _get_event_counts_by_interval(
@@ -476,7 +500,7 @@ class EventsCacheService:
             query = (
                 select(func.count(Event.id))
                 .where(
-                    Event.city == city_name,
+                    Event.region == city_name,
                     Event.start >= interval_start,
                     Event.start < interval_end
                 )

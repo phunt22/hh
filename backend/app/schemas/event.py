@@ -69,7 +69,13 @@ class TopEvent(EventResponse):
     attendance: Optional[int] = None
     popularity_rank: Optional[int] = None
 
+class EventCount(BaseModel):
+    interval_end: datetime
+    interval_start: datetime
+    event_count: int
+
 class BusiestCity(BaseModel):
     city: str
     total_attendance: int
     top_events: List[TopEvent] = []
+    event_counts: List[EventCount] = []
