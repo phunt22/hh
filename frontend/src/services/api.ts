@@ -37,6 +37,7 @@ export interface SimilarEvent {
 export interface SimilaritySearchResponse {
   query_event?: BackendEvent;
   similar_events: SimilarEvent[];
+  audio_response: string;
   total_found: number;
 }
 
@@ -83,7 +84,7 @@ export interface BusiestCity {
 
 export function mapBackendEventToEventPoint(backendEvent: BackendEvent): EventPoint {
   // TODO: change this line to just be attendance when API is ready
-  const attendance = backendEvent.attendance
+  const attendance = Number(backendEvent?.attendance || "0")
   
   // typeof backendEvent.attendance === 'number' ? backendEvent.attendance : getDefaultAttendanceFromId(backendEvent.id);
   return {

@@ -161,7 +161,7 @@ class PredictHQService:
             "spend_amount": int(raw_event["predicted_event_spend"]) if "predicted_event_spend" in raw_event and raw_event["predicted_event_spend"] is not None else 0,
             "predicthq_updated": updated_at or datetime.now(timezone.utc),
             "city": city,
-            "region": region
+            "region": region,
         }
 
     async def test_connection(self) -> bool:

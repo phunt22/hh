@@ -26,9 +26,9 @@ class EmbeddingService:
             logger.debug(f"Cleaned text: {clean_text[:50]}{'...' if len(clean_text) > 50 else ''}")
             if not clean_text:
                 logger.warning("Input text is empty after cleaning. Returning zero vector.")
-                return [0.0] * self.dimension
+                return [0.1] * self.dimension
             
-            # Generate embedding using OpenAI
+            # Generate embedding using Gemini
             logger.debug(f"Requesting embedding from OpenAI for model: {self.model}, dimension: {self.dimension}")
             response = await asyncio.to_thread(
                 client.models.embed_content,
@@ -39,26 +39,26 @@ class EmbeddingService:
                     task_type="SEMANTIC_SIMILARITY"
                 ),
             )
-            logger.info("Received embedding response from OpenAI.")
+            logger.info("Received embedding response from Gemini.")
             
             # Validate embedding values
             embedding_values = response.embeddings[0].values
             if not embedding_values or len(embedding_values) == 0:
                 logger.warning("Received empty embedding, returning zero vector")
-                return [0.0] * self.dimension
+                return [0.1] * self.dimension
             
             # Check for NaN or infinite values
             embedding_array = np.array(embedding_values)
             if np.any(np.isnan(embedding_array)) or np.any(np.isinf(embedding_array)):
                 logger.warning("Received embedding with NaN or infinite values, returning zero vector")
-                return [0.0] * self.dimension
+                return [0.1] * self.dimension
             
             return embedding_values
         
         except Exception as e:
             logger.error(f"Error generating embedding: {e}", exc_info=True)
             # Return zero vector on error
-            return [0.0] * self.dimension
+            return [0.1] * self.dimension
 
     async def generate_batch_embeddings(self, texts: List[str]) -> List[List[float]]:
         """Generate embeddings for multiple texts efficiently"""
