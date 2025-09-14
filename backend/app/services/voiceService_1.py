@@ -9,6 +9,9 @@ from fastapi import HTTPException
 import google.generativeai as genai
 from typing import Any
 
+from google import genai as ai
+from google.genai import types
+
 
 logger = logging.getLogger(__name__)
 

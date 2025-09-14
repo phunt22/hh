@@ -1,3 +1,4 @@
+import base64
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -19,6 +20,8 @@ import logging
 from app.services.events_cache import events_cache_service
 from app.services.enhanced_similarity import enhanced_similarity_service
 import json
+
+from app.services.tts_service import tts_service
 
 logger = logging.getLogger(__name__)
 
@@ -102,10 +105,13 @@ async def search_similar_events(
         
         logger.info(f"Successfully converted {len(similar_events)} events")
         
+        audio_string = tts_service.explain_search(similar_events)
+
         response = SimilaritySearchResponse(
             query_event=query_event,
             similar_events=similar_events,
-            total_found=len(similar_events)
+            total_found=len(similar_events),
+            audio_response=audio_string,
         )
         
         logger.info(f"=== SEARCH REQUEST SUCCESS ===")

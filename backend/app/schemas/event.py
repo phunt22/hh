@@ -55,6 +55,7 @@ class SimilaritySearchResponse(BaseModel):
     query_event: Optional[EventResponse] = None
     similar_events: List[Dict[str, Any]]
     total_found: int
+    audio_response: Optional[str] = None
 
 
 class ETLStatus(BaseModel):
