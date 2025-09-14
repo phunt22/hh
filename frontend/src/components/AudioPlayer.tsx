@@ -14,7 +14,12 @@ export function AudioPlayerWithVisualizer({ audioDataUrl }: AudioPlayerWithVisua
   const audioCtxRef = useRef<AudioContext | null>(null)
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
 
-  console.log({ audioDataUrl })
+  // Autoplay on mount
+  useEffect(() => {
+    handlePlayPause().catch(() => {
+      // Autoplay might fail due to browser policies; ignore silently
+    })
+  }, [])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -44,7 +49,6 @@ export function AudioPlayerWithVisualizer({ audioDataUrl }: AudioPlayerWithVisua
 
         ctx.fillStyle = `hsl(${hue}, 80%, 60%)`
         ctx.fillRect(i * (barWidth + gap), offset, barWidth, height)
-        ctx.roundRect
       }
 
       animationRef.current = requestAnimationFrame(draw)
@@ -89,7 +93,9 @@ export function AudioPlayerWithVisualizer({ audioDataUrl }: AudioPlayerWithVisua
         setIsStopped(false)
       }
       await audioCtxRef.current?.resume()
-      audio.play()
+      audio.play().catch(() => {
+        // Autoplay might fail; ignore silently
+      })
       setIsPlaying(true)
     }
   }
@@ -105,45 +111,44 @@ export function AudioPlayerWithVisualizer({ audioDataUrl }: AudioPlayerWithVisua
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50">
-      <div className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-2xl shadow-lg px-6 py-4 w-[90vw] max-w-xl flex flex-col items-center space-y-4">
+      <div className="bg-white dark:bg-neutral-900 border border-neutral-300 dark:border-neutral-700 rounded-[60px] shadow-lg px-8 py-4 w-[90vw] max-w-xl flex items-center">
         {/* Hidden audio element */}
         <audio ref={audioRef} src={audioDataUrl} preload="auto" />
 
         {/* Siri-style visualizer */}
-        <canvas ref={canvasRef} width={600} height={100} className="w-full h-24 rounded-md bg-black" />
+        <canvas ref={canvasRef} width={600} height={100} className="w-3/4 h-12 rounded-2xl bg-black" />
 
         {/* Controls */}
-        <div className="flex space-x-6">
+        <div className="flex space-x-3 ml-auto">
           {/* Play / Pause button */}
-          <button
+          <div
+            role="button"
             onClick={handlePlayPause}
-            className="w-12 h-12 flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700 text-white"
+            className="w-12 h-12 flex items-center justify-center rounded-[60px] bg-white border border-zinc-400 shadow-sm text-black"
           >
             {isPlaying ? (
-              // Pause icon
               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                 <rect x="6" y="4" width="4" height="16" rx="1" />
                 <rect x="14" y="4" width="4" height="16" rx="1" />
               </svg>
             ) : (
-              // Play icon
               <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M5 3v18l15-9-15-9z" />
               </svg>
             )}
-          </button>
+          </div>
 
           {/* Stop button */}
-          <button
+          <div
+            role="button"
             onClick={handleStop}
-            className="w-12 h-12 flex items-center justify-center rounded-full bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
-            disabled={isStopped}
+            className="w-12 h-12 flex items-center justify-center rounded-[999px] bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+            aria-disabled={isStopped}
           >
-            {/* Stop icon */}
             <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
               <rect x="6" y="6" width="12" height="12" rx="1" />
             </svg>
-          </button>
+          </div>
         </div>
       </div>
     </div>
