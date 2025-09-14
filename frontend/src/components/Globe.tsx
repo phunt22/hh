@@ -381,4 +381,4 @@ export default function Globe({
       }
     </div>
   );
-};
+}
