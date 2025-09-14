@@ -60,80 +60,228 @@ class EnhancedSimilarityService:
             event_id
         )
 
+    # async def _find_by_vector_similarity(
+    #     self,
+    #     session: AsyncSession,
+    #     query_embedding: List[float],
+    #     limit: int,
+    #     min_similarity: float,
+    #     exclude_event_id: Optional[str] = None
+    # ) -> List[Tuple[Event, float]]:
+    #     """Find similar events using pgvector cosine similarity"""
+        
+    #     try:
+    #         # Build the similarity query using pgvector
+    #         # Convert embedding to PostgreSQL array format
+    #         embedding_str = f"[{','.join(map(str, query_embedding))}]"
+            
+    #         # Base query with cosine similarity
+    #         similarity_expr = f"1 - (embeddings <=> '{embedding_str}'::vector)"
+            
+    #         query_parts = [
+    #             "SELECT *, ",
+    #             f"({similarity_expr}) as similarity ",
+    #             "FROM events ",
+    #             "WHERE embeddings IS NOT NULL "
+    #         ]
+            
+    #         # Add similarity threshold
+    #         query_parts.append(f"AND ({similarity_expr}) >= {min_similarity} ")
+            
+    #         # Exclude specific event if provided
+    #         if exclude_event_id:
+    #             query_parts.append(f"AND id != '{exclude_event_id}' ")
+            
+    #         # Order by similarity and limit
+    #         query_parts.extend([
+    #             f"ORDER BY ({similarity_expr}) DESC ",
+    #             f"LIMIT {limit}"
+    #         ])
+            
+    #         full_query = "".join(query_parts)
+            
+    #         # Execute the query
+    #         result = await session.execute(text(full_query))
+    #         rows = result.fetchall()
+            
+    #         # Convert results to Event objects with similarity scores
+    #         similar_events = []
+    #         for row in rows:
+    #             # Create Event object from row data
+    #             event = Event(
+    #                 id=row.id,
+    #                 title=row.title,
+    #                 description=row.description,
+    #                 category=row.category,
+    #                 longitude=row.longitude,
+    #                 latitude=row.latitude,
+    #                 embeddings=row.embeddings,
+    #                 start=row.start,
+    #                 end=row.end,
+    #                 location=row.location,
+    #                 predicthq_updated=row.predicthq_updated,
+    #                 created_at=row.created_at,
+    #                 updated_at=row.updated_at,
+    #                 related_event_ids=row.related_event_ids
+    #             )
+                
+    #             similarity_score = float(row.similarity)
+    #             similar_events.append((event, similarity_score))
+            
+    #         logger.info(f"Found {len(similar_events)} similar events using vector similarity")
+    #         return similar_events
+            
+    #     except Exception as e:
+    #         logger.error(f"Vector similarity search failed: {e}")
+    #         # Fallback to manual similarity calculation
+    #         return await self._manual_similarity_search(
+    #             session, query_embedding, limit, min_similarity, exclude_event_id
+    #         )
+
+
+
+    
+    # async def _manual_similarity_search(
+    #     self,
+    #     session: AsyncSession,
+    #     query_embedding: List[float],
+    #     limit: int,
+    #     min_similarity: float,
+    #     exclude_event_id: Optional[str] = None
+    # ) -> List[Tuple[Event, float]]:
+    #     """Fallback manual similarity calculation using numpy"""
+    #     query = select(Event).where(Event.embeddings.is_not(None))
+    #     if exclude_event_id:
+    #         query = query.where(Event.id != exclude_event_id)
+        
+    #     result = await session.execute(query)
+    #     events = result.scalars().all()
+        
+    #     similarities = []
+    #     query_vector = np.array(query_embedding)
+        
+    #     for event in events:
+    #         if event.embeddings:
+    #             try:
+    #                 event_vector = np.array(event.embeddings)
+    #                 dot_product = np.dot(query_vector, event_vector)
+    #                 norm_query = np.linalg.norm(query_vector)
+    #                 norm_event = np.linalg.norm(event_vector)
+                    
+    #                 if norm_query > 0 and norm_event > 0:
+    #                     similarity = dot_product / (norm_query * norm_event)
+    #                     if similarity >= min_similarity:
+    #                         similarities.append((event, float(similarity)))
+    #             except Exception as e:
+    #                 logger.warning(f"Error calculating similarity for event {event.id}: {e}")
+    #                 continue
+        
+    #     similarities.sort(key=lambda x: x[1], reverse=True)
+    #     logger.info(f"Manual similarity search found {len(similarities)} events")
+    #     return similarities[:limit]
+
+
     async def _find_by_vector_similarity(
         self,
         session: AsyncSession,
         query_embedding: List[float],
         limit: int,
         min_similarity: float,
-        exclude_event_id: Optional[str] = None
+        exclude_event_id: Optional[str] = None,
     ) -> List[Tuple[Event, float]]:
-        """Find similar events using pgvector cosine similarity"""
-        
+        """Find similar events using pgvector cosine similarity directly in database"""
         try:
-            # Build the similarity query using pgvector
-            # Convert embedding to PostgreSQL array format
+            # Convert embedding to PostgreSQL vector format
             embedding_str = f"[{','.join(map(str, query_embedding))}]"
-            
-            # Base query with cosine similarity
-            similarity_expr = f"1 - (embeddings <=> '{embedding_str}'::vector)"
-            
-            query_parts = [
-                "SELECT *, ",
-                f"({similarity_expr}) as similarity ",
-                "FROM events ",
-                "WHERE embeddings IS NOT NULL "
-            ]
-            
-            # Add similarity threshold
-            query_parts.append(f"AND ({similarity_expr}) >= {min_similarity} ")
-            
-            # Exclude specific event if provided
+
             if exclude_event_id:
-                query_parts.append(f"AND id != '{exclude_event_id}' ")
-            
-            # Order by similarity and limit
-            query_parts.extend([
-                f"ORDER BY ({similarity_expr}) DESC ",
-                f"LIMIT {limit}"
-            ])
-            
-            full_query = "".join(query_parts)
-            
-            # Execute the query
-            result = await session.execute(text(full_query))
+                sql_query = """
+                SELECT 
+                    id, title, description, category, longitude, latitude, 
+                    embeddings, start, "end", location, predicthq_updated,
+                    created_at, updated_at, related_event_ids, city, region,
+                    attendance, spend_amount,
+                    (1 - (embeddings <=> :embedding::vector)) AS similarity_score
+                FROM events 
+                WHERE embeddings IS NOT NULL 
+                  AND id != :exclude_id
+                  AND (1 - (embeddings <=> :embedding::vector)) >= :min_similarity
+                ORDER BY embeddings <=> :embedding::vector ASC
+                LIMIT :limit
+                """
+                params = {
+                    "embedding": embedding_str,
+                    "exclude_id": exclude_event_id,
+                    "min_similarity": min_similarity,
+                    "limit": limit,
+                }
+            else:
+                sql_query = """
+                SELECT 
+                    id, title, description, category, longitude, latitude, 
+                    embeddings, start, "end", location, predicthq_updated,
+                    created_at, updated_at, related_event_ids, city, region,
+                    attendance, spend_amount,
+                    (1 - (embeddings <=> :embedding::vector)) AS similarity_score
+                FROM events 
+                WHERE embeddings IS NOT NULL 
+                  AND (1 - (embeddings <=> :embedding::vector)) >= :min_similarity
+                ORDER BY embeddings <=> :embedding::vector ASC
+                LIMIT :limit
+                """
+                params = {
+                    "embedding": embedding_str,
+                    "min_similarity": min_similarity,
+                    "limit": limit,
+                }
+
+            logger.info(f"Executing vector similarity search with min_similarity={min_similarity}")
+            result = await session.execute(text(sql_query), params)
             rows = result.fetchall()
-            
-            # Convert results to Event objects with similarity scores
-            similar_events = []
+            logger.info(f"Database returned {len(rows)} similar events")
+
+            similar_events: List[Tuple[Event, float]] = []
             for row in rows:
-                # Create Event object from row data
-                event = Event(
-                    id=row.id,
-                    title=row.title,
-                    description=row.description,
-                    category=row.category,
-                    longitude=row.longitude,
-                    latitude=row.latitude,
-                    embeddings=row.embeddings,
-                    start=row.start,
-                    end=row.end,
-                    location=row.location,
-                    predicthq_updated=row.predicthq_updated,
-                    created_at=row.created_at,
-                    updated_at=row.updated_at,
-                    related_event_ids=row.related_event_ids
-                )
-                
-                similarity_score = float(row.similarity)
-                similar_events.append((event, similarity_score))
-            
-            logger.info(f"Found {len(similar_events)} similar events using vector similarity")
+                try:
+                    event = Event(
+                        id=row.id,
+                        title=row.title,
+                        description=row.description,
+                        category=row.category,
+                        longitude=row.longitude,
+                        latitude=row.latitude,
+                        embeddings=row.embeddings,
+                        start=row.start,
+                        end=row.end,
+                        location=row.location,
+                        predicthq_updated=getattr(row, "predicthq_updated", None),
+                        created_at=row.created_at,
+                        updated_at=row.updated_at,
+                        related_event_ids=row.related_event_ids,
+                        city=getattr(row, "city", None),
+                        region=getattr(row, "region", None),
+                        attendance=getattr(row, "attendance", None),
+                        spend_amount=getattr(row, "spend_amount", None),
+                    )
+                    similarity_score = float(row.similarity_score)
+                    similar_events.append((event, similarity_score))
+                    logger.info(f"Event: {event.title} | Similarity: {similarity_score:.3f}")
+                except Exception as row_error:
+                    logger.warning(
+                        f"Error processing row for event {getattr(row, 'id', 'unknown')}: {row_error}"
+                    )
+                    continue
+
+            logger.info(
+                f"Successfully processed {len(similar_events)} similar events using database vector search"
+            )
             return similar_events
-            
+
         except Exception as e:
-            logger.error(f"Vector similarity search failed: {e}")
-            # Fallback to manual similarity calculation
+            logger.error(f"Database vector similarity search failed: {e}")
+            import traceback
+            logger.error(f"Traceback: {traceback.format_exc()}")
+            logger.info("Falling back to manual similarity calculation...")
             return await self._manual_similarity_search(
                 session, query_embedding, limit, min_similarity, exclude_event_id
             )
@@ -144,84 +292,49 @@ class EnhancedSimilarityService:
         query_embedding: List[float],
         limit: int,
         min_similarity: float,
-        exclude_event_id: Optional[str] = None
+        exclude_event_id: Optional[str] = None,
     ) -> List[Tuple[Event, float]]:
-        """Fallback manual similarity calculation using numpy"""
-        
-        # Get all events with embeddings
-        query = select(Event).where(Event.embeddings.is_not(None))
+        """Fallback manual similarity calculation — should rarely be used"""
+        logger.warning("Using manual similarity calculation — avoid for performance when possible")
+
+        query = select(Event).where(Event.embeddings.is_not(None)).limit(500)
         if exclude_event_id:
             query = query.where(Event.id != exclude_event_id)
-        
+
         result = await session.execute(query)
         events = result.scalars().all()
-        
-        # Calculate similarities manually
-        similarities = []
-        query_vector = np.array(query_embedding)
-        
+
+        similarities: List[Tuple[Event, float]] = []
+        query_vector = np.array(query_embedding, dtype=np.float32)
+
         for event in events:
-            if event.embeddings:
+            if event.embeddings and len(event.embeddings) > 0:
                 try:
-                    event_vector = np.array(event.embeddings)
-                    
-                    # Calculate cosine similarity
+                    event_vector = np.array(event.embeddings, dtype=np.float32)
+
+                    # Ensure vectors align
+                    if len(query_vector) != len(event_vector):
+                        logger.warning(f"Vector length mismatch for event {event.id}")
+                        continue
+
+                    # Cosine similarity
                     dot_product = np.dot(query_vector, event_vector)
                     norm_query = np.linalg.norm(query_vector)
                     norm_event = np.linalg.norm(event_vector)
-                    
+
                     if norm_query > 0 and norm_event > 0:
-                        similarity = dot_product / (norm_query * norm_event)
-                        
+                        similarity = float(dot_product / (norm_query * norm_event))
                         if similarity >= min_similarity:
-                            similarities.append((event, float(similarity)))
-                            
-                except Exception as e:
-                    logger.warning(f"Error calculating similarity for event {event.id}: {e}")
+                            similarities.append((event, similarity))
+                except Exception as err:
+                    logger.warning(f"Error calculating similarity for event {event.id}: {err}")
                     continue
-        
-        # Sort by similarity score (descending) and limit
+
         similarities.sort(key=lambda x: x[1], reverse=True)
-        
-        logger.info(f"Manual similarity search found {len(similarities)} events")
+        logger.info(
+            f"Manual similarity search found {len(similarities)} events from {len(events)} candidates"
+        )
         return similarities[:limit]
-
-    async def get_event_embedding(
-        self,
-        session: AsyncSession,
-        event_id: str
-    ) -> Optional[List[float]]:
-        """Get embedding for a specific event"""
-        
-        query = select(Event.embeddings).where(Event.id == event_id)
-        result = await session.execute(query)
-        embedding = result.scalar_one_or_none()
-        
-        return embedding
-
-    async def batch_similarity_search(
-        self,
-        session: AsyncSession,
-        event_ids: List[str],
-        limit_per_event: int = 5,
-        min_similarity: float = 0.7
-    ) -> Dict[str, List[Tuple[Event, float]]]:
-        """Perform similarity search for multiple events at once"""
-        
-        results = {}
-        
-        for event_id in event_ids:
-            try:
-                similar_events = await self.find_similar_events_by_id(
-                    session, event_id, limit_per_event, min_similarity
-                )
-                results[event_id] = similar_events
-                
-            except Exception as e:
-                logger.error(f"Error in batch similarity search for {event_id}: {e}")
-                results[event_id] = []
-        
-        return results
 
 
 # Global instance
